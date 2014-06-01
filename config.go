@@ -26,14 +26,15 @@ func ConfigureAndParse(config interface{}) error {
 
 // Configure will configure the flag parameters according to the tags of the
 // provided data type. It is allowed to call this method multiple times with
-// different data types.
-// Fields without a 'flag' tag will be ignored.
+// different data types. (As long as flag's Parse() method has not been called
+// yet.)
+// Fields without a 'flag' tag or with an empty 'flag' tag will be ignored.
 //
 // The 'flag' tag consists of 3 parts, similar to the *Var-functions of the
 // flag package. Parts are separated by a comma. The parts are:
-// 1st: flag name
-// 2nd: default value
-// 3rd: usage description
+// - 1st: flag name
+// - 2nd: default value
+// - 3rd: usage description
 // Example tag: `flag:"verbose,false,Enable verbose output."`.
 // This will create a flag 'verbose', which defaults to 'false' and shows usage
 // information "Enables default output.".
@@ -41,6 +42,7 @@ func ConfigureAndParse(config interface{}) error {
 // If an error occurs, this error will be returned and the configuration of
 // other struct fields will be aborted.
 func Configure(config interface{}) error {
+	// TODO check for flag.Parsed() state before attempting to add new flags.
 	val, err := checkType(config)
 	if err != nil {
 		return err
@@ -101,7 +103,6 @@ func Configure(config interface{}) error {
 		// TODO support Duration
 		// TODO support Var (any variable via flag.Value interface)
 		// TODO support for smaller int, uint, float types?
-		// TODO how to handle unsupported types (return error, leave message, etc.)
 		}
 	}
 	return nil
