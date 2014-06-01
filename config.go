@@ -19,8 +19,6 @@ func Configure(config interface{}) error {
 		f := (reflect.StructField)(structType.Field(i))
 		t := f.Tag.Get("flag")
 		if t == "" {
-			// TODO no tag available
-			fmt.Printf("Skipping '%s' ...\n", f.Name)
 			continue
 		}
 		tag := parseTag(t)
@@ -34,51 +32,39 @@ func Configure(config interface{}) error {
 		case reflect.Bool:
 			defaultVal, err := strconv.ParseBool(tag.DefaultValue)
 			if err != nil {
-				// TODO invalid default, skipping
-				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
-				continue
+				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
 			}
 			flag.BoolVar((*bool)(fieldptr), tag.Name, defaultVal, tag.Description)
 		case reflect.Float64:
 			defaultVal, err := strconv.ParseFloat(tag.DefaultValue, 64)
 			if err != nil {
-				// TODO invalid default, skipping
-				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
-				continue
+				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
 			}
 			flag.Float64Var((*float64)(fieldptr), tag.Name, defaultVal, tag.Description)
 		case reflect.Int:
 			// TODO parse exact number of available bits, or always 64?
 			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, f.Type.Bits())
 			if err != nil {
-				// TODO invalid default, skipping
-				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
-				continue
+				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
 			}
 			flag.IntVar((*int)(fieldptr), tag.Name, int(defaultVal), tag.Description)
 		case reflect.Int64:
 			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, 64)
 			if err != nil {
-				// TODO invalid default, skipping
-				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
-				continue
+				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
 			}
 			flag.Int64Var((*int64)(fieldptr), tag.Name, defaultVal, tag.Description)
 		case reflect.Uint:
 			// TODO parse exact number of available bits, or always 64?
 			defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, f.Type.Bits())
 			if err != nil {
-				// TODO invalid default, skipping
-				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
-				continue
+				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
 			}
 			flag.UintVar((*uint)(fieldptr), tag.Name, uint(defaultVal), tag.Description)
 		case reflect.Uint64:
 			defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, 64)
 			if err != nil {
-				// TODO invalid default, skipping
-				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
-				continue
+				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
 			}
 			flag.Uint64Var((*uint64)(fieldptr), tag.Name, defaultVal, tag.Description)
 		// TODO support Duration

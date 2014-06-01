@@ -131,12 +131,8 @@ func TestTagBoolInvalidDefault(t *testing.T) {
 	var s = struct {
 		v bool `flag:"b2,foo,This sets the bool flag."`
 	}{}
-	if Configure(&s) != nil {
-		t.Fatal("Expected correct configuration without any errors.")
-	}
-	f := flag.Lookup("b2")
-	if f != nil {
-		t.Fatal("Did not expect a flag, since we provided a bad default value.")
+	if Configure(&s) == nil {
+		t.Fatal("Expected error due to incorrect default value.")
 	}
 }
 
@@ -166,12 +162,8 @@ func TestTagFloat64InvalidDefault(t *testing.T) {
 	var s = struct {
 		v float64 `flag:"f2,abcde,This sets the float64 flag."`
 	}{}
-	if Configure(&s) != nil {
-		t.Fatal("Expected correct configuration without any errors.")
-	}
-	f := flag.Lookup("f2")
-	if f != nil {
-		t.Fatal("Did not expect a flag, since we provided a bad default value.")
+	if Configure(&s) == nil {
+		t.Fatal("Expected error due to incorrect default value.")
 	}
 }
 
@@ -201,12 +193,8 @@ func TestTagIntInvalidDefault(t *testing.T) {
 	var s = struct {
 		v int `flag:"i2,0.33333,This sets the int flag."`
 	}{}
-	if Configure(&s) != nil {
-		t.Fatal("Expected correct configuration without any errors.")
-	}
-	f := flag.Lookup("i2")
-	if f != nil {
-		t.Fatal("Did not expect a flag, since we provided a bad default value.")
+	if Configure(&s) == nil {
+		t.Fatal("Expected error due to incorrect default value.")
 	}
 }
 
@@ -236,12 +224,8 @@ func TestTagInt64InvalidDefault(t *testing.T) {
 	var s = struct {
 		v int64 `flag:"i64-2,abcdefgh,This sets the int64 flag."`
 	}{}
-	if Configure(&s) != nil {
-		t.Fatal("Expected correct configuration without any errors.")
-	}
-	f := flag.Lookup("i64-2")
-	if f != nil {
-		t.Fatal("Did not expect a flag, since we provided a bad default value.")
+	if Configure(&s) == nil {
+		t.Fatal("Expected error due to incorrect default value.")
 	}
 }
 
@@ -271,12 +255,8 @@ func TestTagUintInvalidDefault(t *testing.T) {
 	var s = struct {
 		v uint `flag:"u2,-200,This sets the uint flag."`
 	}{}
-	if Configure(&s) != nil {
-		t.Fatal("Expected correct configuration without any errors.")
-	}
-	f := flag.Lookup("u2")
-	if f != nil {
-		t.Fatal("Did not expect a flag, since we provided a bad default value.")
+	if Configure(&s) == nil {
+		t.Fatal("Expected error due to incorrect default value.")
 	}
 }
 
@@ -306,11 +286,7 @@ func TestTagUint64InvalidDefault(t *testing.T) {
 	var s = struct {
 		v uint64 `flag:"u64-2,abcdefgh,This sets the uint64 flag."`
 	}{}
-	if Configure(&s) != nil {
-		t.Fatal("Expected correct configuration without any errors.")
-	}
-	f := flag.Lookup("u64-2")
-	if f != nil {
-		t.Fatal("Did not expect a flag, since we provided a bad default value.")
+	if Configure(&s) == nil {
+		t.Fatal("Expected error due to incorrect default value.")
 	}
 }
