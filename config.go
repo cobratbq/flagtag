@@ -9,6 +9,21 @@ import (
 	"unsafe"
 )
 
+// MustConfigureAndParse is like ConfigureAndParse, the only difference is that
+// it will panic in case of an error.
+func MustConfigureAndParse(config interface{}) {
+	MustConfigure(config)
+	flag.Parse()
+}
+
+// MustConfigure is like Configure, the only difference is that it will panic
+// in case of an error.
+func MustConfigure(config interface{}) {
+	if err := Configure(config); err != nil {
+		panic(err)
+	}
+}
+
 // ConfigureAndParse will first attempt to configure the flags according to the
 // provided config type. If any error occurs, this error will be returned and
 // the command line arguments will not be parsed. If no error occurs, the
@@ -100,9 +115,9 @@ func Configure(config interface{}) error {
 				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
 			}
 			flag.Uint64Var((*uint64)(fieldptr), tag.Name, defaultVal, tag.Description)
-		// TODO support Duration
-		// TODO support Var (any variable via flag.Value interface)
-		// TODO support for smaller int, uint, float types?
+			// TODO support Duration
+			// TODO support Var (any variable via flag.Value interface)
+			// TODO support for smaller int, uint, float types?
 		}
 	}
 	return nil

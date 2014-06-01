@@ -290,3 +290,59 @@ func TestTagUint64InvalidDefault(t *testing.T) {
 		t.Fatal("Expected error due to incorrect default value.")
 	}
 }
+
+func TestMustConfigure(t *testing.T) {
+	defer func() {
+		// We are supposed to get a panic, so silence it.
+		recover()
+	}()
+	var s = struct {
+		x bool `flag:"x,test,test"`
+	}{}
+	MustConfigure(&s)
+	t.FailNow()
+}
+
+func TestConfigureAndParse(t *testing.T) {
+	var s = struct {
+		x string `flag:"xx,test,Test 1."`
+		y bool   `flag:"y,f,Test 2."`
+	}{}
+	if err := ConfigureAndParse(&s); err != nil {
+		t.Fatal("Did not expect error: " + err.Error())
+	}
+	if flag.Parsed() == false {
+		t.Fatal("Expected command line flags to be parsed by now.")
+	}
+}
+
+func TestConfigureAndParseFaulty(t *testing.T) {
+	var s = struct {
+		y bool `flag:"y,bla,Test 2."`
+	}{}
+	if err := ConfigureAndParse(&s); err == nil {
+		t.Fatal("Expected an error but got nothing.")
+	}
+}
+
+func TestMustConfigureAndParseFailing(t *testing.T) {
+	defer func() {
+		// We are supposed to get a panic, so silence it.
+		recover()
+	}()
+	var s = struct {
+		x bool `flag:"xxx,test,test"`
+	}{}
+	MustConfigureAndParse(&s)
+	t.FailNow()
+}
+
+func TestMustConfigureAndParseSuccessfully(t *testing.T) {
+	var s = struct {
+		x bool `flag:"xxxx,True,test"`
+	}{}
+	MustConfigureAndParse(&s)
+	if !flag.Parsed() {
+		t.Fatal("Expected an command line flags to be parsed by now.")
+	}
+}
