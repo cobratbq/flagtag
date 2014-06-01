@@ -10,16 +10,9 @@ import (
 )
 
 func Configure(config interface{}) error {
-	if config == nil {
-		return fmt.Errorf("config cannot be nil")
-	}
-	ptr := reflect.ValueOf(config)
-	if ptr.IsNil() {
-		return fmt.Errorf("config cannot point to nil")
-	}
-	val := reflect.Indirect(ptr)
-	if val.Kind() != reflect.Struct {
-		return fmt.Errorf("config instance is not a struct")
+	val, err := checkType(config)
+	if err != nil {
+		return err
 	}
 	structType := val.Type()
 	for i := 0; i < structType.NumField(); i++ {
@@ -96,6 +89,22 @@ func Configure(config interface{}) error {
 		}
 	}
 	return nil
+}
+
+func checkType(config interface{}) (reflect.Value, error) {
+	var zero reflect.Value
+	if config == nil {
+		return zero, fmt.Errorf("config cannot be nil")
+	}
+	ptr := reflect.ValueOf(config)
+	if ptr.IsNil() {
+		return zero, fmt.Errorf("config cannot point to nil")
+	}
+	val := reflect.Indirect(ptr)
+	if val.Kind() != reflect.Struct {
+		return zero, fmt.Errorf("config instance is not a struct")
+	}
+	return val, nil
 }
 
 func parseTag(value string) flagTag {
