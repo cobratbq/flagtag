@@ -40,7 +40,7 @@ func Configure(config interface{}) error {
 			}
 			flag.BoolVar((*bool)(fieldptr), tag.Name, defaultVal, tag.Description)
 		case reflect.Float64:
-			defaultVal, err := strconv.ParseFloat(tag.DefaultValue, f.Type.Bits())
+			defaultVal, err := strconv.ParseFloat(tag.DefaultValue, 64)
 			if err != nil {
 				// TODO invalid default, skipping
 				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
@@ -48,6 +48,7 @@ func Configure(config interface{}) error {
 			}
 			flag.Float64Var((*float64)(fieldptr), tag.Name, defaultVal, tag.Description)
 		case reflect.Int:
+			// TODO parse exact number of available bits, or always 64?
 			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, f.Type.Bits())
 			if err != nil {
 				// TODO invalid default, skipping
@@ -56,7 +57,7 @@ func Configure(config interface{}) error {
 			}
 			flag.IntVar((*int)(fieldptr), tag.Name, int(defaultVal), tag.Description)
 		case reflect.Int64:
-			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, f.Type.Bits())
+			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, 64)
 			if err != nil {
 				// TODO invalid default, skipping
 				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
@@ -64,6 +65,7 @@ func Configure(config interface{}) error {
 			}
 			flag.Int64Var((*int64)(fieldptr), tag.Name, defaultVal, tag.Description)
 		case reflect.Uint:
+			// TODO parse exact number of available bits, or always 64?
 			defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, f.Type.Bits())
 			if err != nil {
 				// TODO invalid default, skipping
