@@ -12,7 +12,7 @@ func TestConfigureNil(t *testing.T) {
 }
 
 func TestConfigureNilPointer(t *testing.T) {
-	var c *struct{} = nil
+	var c *struct{}
 	var p interface{}
 	p = c
 	if Configure(p) == nil {

@@ -9,6 +9,37 @@ import (
 	"unsafe"
 )
 
+// ConfigureAndParse will first attempt to configure the flags according to the
+// provided config type. If any error occurs, this error will be returned and
+// the command line arguments will not be parsed. If no error occurs, the
+// command line arguments will be parsed and the config type will contain the
+// result.
+// Using this function may remove the need to even import the flag package at
+// all.
+func ConfigureAndParse(config interface{}) error {
+	if err := Configure(config); err != nil {
+		return err
+	}
+	flag.Parse()
+	return nil
+}
+
+// Configure will configure the flag parameters according to the tags of the
+// provided data type. It is allowed to call this method multiple times with
+// different data types.
+// Fields without a 'flag' tag will be ignored.
+//
+// The 'flag' tag consists of 3 parts, similar to the *Var-functions of the
+// flag package. Parts are separated by a comma. The parts are:
+// 1st: flag name
+// 2nd: default value
+// 3rd: usage description
+// Example tag: `flag:"verbose,false,Enable verbose output."`.
+// This will create a flag 'verbose', which defaults to 'false' and shows usage
+// information "Enables default output.".
+//
+// If an error occurs, this error will be returned and the configuration of
+// other struct fields will be aborted.
 func Configure(config interface{}) error {
 	val, err := checkType(config)
 	if err != nil {
