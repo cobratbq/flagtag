@@ -48,8 +48,7 @@ func Configure(config interface{}) error {
 			}
 			flag.Float64Var((*float64)(fieldptr), tag.Name, defaultVal, tag.Description)
 		case reflect.Int:
-			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 10, f.Type.Bits())
-			// TODO distinguish between oct (0o1234567), dec (1234), hex (0x0123456789abcdef)
+			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, f.Type.Bits())
 			if err != nil {
 				// TODO invalid default, skipping
 				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
@@ -57,8 +56,7 @@ func Configure(config interface{}) error {
 			}
 			flag.IntVar((*int)(fieldptr), tag.Name, int(defaultVal), tag.Description)
 		case reflect.Int64:
-			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 10, f.Type.Bits())
-			// TODO distinguish between oct (0o1234567), dec (1234), hex (0x0123456789abcdef)
+			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, f.Type.Bits())
 			if err != nil {
 				// TODO invalid default, skipping
 				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
@@ -66,8 +64,7 @@ func Configure(config interface{}) error {
 			}
 			flag.Int64Var((*int64)(fieldptr), tag.Name, defaultVal, tag.Description)
 		case reflect.Uint:
-			defaultVal, err := strconv.ParseUint(tag.DefaultValue, 10, f.Type.Bits())
-			// TODO distinguish between oct (0o1234567), dec (1234), hex (0x0123456789abcdef)
+			defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, f.Type.Bits())
 			if err != nil {
 				// TODO invalid default, skipping
 				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
@@ -75,7 +72,7 @@ func Configure(config interface{}) error {
 			}
 			flag.UintVar((*uint)(fieldptr), tag.Name, uint(defaultVal), tag.Description)
 		case reflect.Uint64:
-			defaultVal, err := strconv.ParseUint(tag.DefaultValue, 10, 64)
+			defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, 64)
 			if err != nil {
 				// TODO invalid default, skipping
 				fmt.Printf("Invalid value, skipping %s ...\n", f.Name)
