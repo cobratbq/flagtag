@@ -12,8 +12,9 @@ import (
 // MustConfigureAndParse is like ConfigureAndParse, the only difference is that
 // it will panic in case of an error.
 func MustConfigureAndParse(config interface{}) {
-	MustConfigure(config)
-	flag.Parse()
+	if err := ConfigureAndParse(config); err != nil {
+		panic(err)
+	}
 }
 
 // MustConfigure is like Configure, the only difference is that it will panic
@@ -57,7 +58,6 @@ func ConfigureAndParse(config interface{}) error {
 // If an error occurs, this error will be returned and the configuration of
 // other struct fields will be aborted.
 func Configure(config interface{}) error {
-	// TODO check for flag.Parsed() state before attempting to add new flags.
 	val, err := checkType(config)
 	if err != nil {
 		return err
@@ -74,6 +74,10 @@ func Configure(config interface{}) error {
 			return fmt.Errorf("invalid flag name: empty string")
 		}
 		var fieldptr = unsafe.Pointer(val.UnsafeAddr() + f.Offset)
+		// TODO support Duration
+		// TODO support Var (any variable via flag.Value interface)
+		// TODO support nested structs.
+		// TODO support smaller int, uint, float types? (how to handle overflow?)
 		switch f.Type.Kind() {
 		case reflect.String:
 			flag.StringVar((*string)(fieldptr), tag.Name, tag.DefaultValue, tag.Description)
@@ -115,9 +119,8 @@ func Configure(config interface{}) error {
 				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
 			}
 			flag.Uint64Var((*uint64)(fieldptr), tag.Name, defaultVal, tag.Description)
-			// TODO support Duration
-			// TODO support Var (any variable via flag.Value interface)
-			// TODO support for smaller int, uint, float types?
+		default:
+			return fmt.Errorf("unsupported data type for field '%s'", f.Name)
 		}
 	}
 	return nil

@@ -346,3 +346,12 @@ func TestMustConfigureAndParseSuccessfully(t *testing.T) {
 		t.Fatal("Expected an command line flags to be parsed by now.")
 	}
 }
+
+func TestErrorOnInvalidDataType(t *testing.T) {
+	var s = struct {
+		invalid uintptr `flag:"xxxxxx,,"`
+	}{}
+	if err := Configure(&s); err == nil {
+		t.Fatal("Expected error because of unsupported data type.")
+	}
+}
