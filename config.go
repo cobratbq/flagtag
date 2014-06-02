@@ -77,7 +77,6 @@ func Configure(config interface{}) error {
 		// TODO support Duration
 		// TODO support Var (any variable via flag.Value interface)
 		// TODO support nested structs.
-		// TODO support smaller int, uint, float types? (how to handle overflow?)
 		switch f.Type.Kind() {
 		case reflect.String:
 			flag.StringVar((*string)(fieldptr), tag.Name, tag.DefaultValue, tag.Description)
