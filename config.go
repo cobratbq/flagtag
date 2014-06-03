@@ -62,9 +62,19 @@ func Configure(config interface{}) error {
 	if err != nil {
 		return err
 	}
-	structType := val.Type()
+	return configure(val.Type(), val.UnsafeAddr())
+}
+
+func configure(structType reflect.Type, baseAddr uintptr) error {
 	for i := 0; i < structType.NumField(); i++ {
 		f := (reflect.StructField)(structType.Field(i))
+		if f.Type.Kind() == reflect.Struct {
+			// kind is a struct => recurse into inner struct
+			if err := configure(f.Type, baseAddr+f.Offset); err != nil {
+				return err
+			}
+			continue
+		}
 		t := f.Tag.Get("flag")
 		if t == "" {
 			continue
@@ -73,10 +83,9 @@ func Configure(config interface{}) error {
 		if tag.Name == "" {
 			return fmt.Errorf("invalid flag name: empty string")
 		}
-		var fieldptr = unsafe.Pointer(val.UnsafeAddr() + f.Offset)
+		var fieldptr = unsafe.Pointer(baseAddr + f.Offset)
 		// TODO support Duration
 		// TODO support Var (any variable via flag.Value interface)
-		// TODO support nested structs.
 		switch f.Type.Kind() {
 		case reflect.String:
 			flag.StringVar((*string)(fieldptr), tag.Name, tag.DefaultValue, tag.Description)

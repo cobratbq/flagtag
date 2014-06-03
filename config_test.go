@@ -355,3 +355,68 @@ func TestErrorOnInvalidDataType(t *testing.T) {
 		t.Fatal("Expected error because of unsupported data type.")
 	}
 }
+
+func TestRecursiveStructProcessing(t *testing.T) {
+	var outer = struct {
+		inner struct {
+			v int `flag:"innerv,1"`
+		}
+	}{}
+	err := Configure(&outer)
+	if err != nil {
+		t.Fatal("Unexpected error: " + err.Error())
+	}
+	f := flag.Lookup("innerv")
+	if f == nil {
+		t.Fatal("Could not find configured flag.")
+	}
+	if f.Name != "innerv" {
+		t.Error("Configured flag has incorrect name.")
+	}
+	if f.DefValue != "1" {
+		t.Error("Configured flag has incorrect default value.")
+	}
+	if f.Usage != "" {
+		t.Error("Configured flag has incorrect usage description.")
+	}
+}
+
+func TestBadInnerStruct(t *testing.T) {
+	var outer = struct {
+		inner struct {
+			v uint `flag:"innerv,-1"`
+		}
+	}{}
+	err := Configure(&outer)
+	if err == nil {
+		t.Fatal("Expected error because of invalid default value.")
+	}
+}
+
+func TestMixedInnerStructProcessing(t *testing.T) {
+	var outer = struct {
+		before uint `flag:"outerBefore,3,some description"`
+		blank  uint
+		inner  struct {
+			dummy  int
+			inside string `flag:"innerInside,2,inside information"`
+		}
+		after int `flag:"outerAfter,1,final remark"`
+	}{}
+	err := Configure(&outer)
+	if err != nil {
+		t.Fatal("Unexpected error: " + err.Error())
+	}
+	flagBefore := flag.Lookup("outerBefore")
+	if flagBefore.Name != "outerBefore" || flagBefore.DefValue != "3" || flagBefore.Usage != "some description" {
+		t.Error("Flag outerBefore data is invalid.")
+	}
+	flagInside := flag.Lookup("innerInside")
+	if flagInside.Name != "innerInside" || flagInside.DefValue != "2" || flagInside.Usage != "inside information" {
+		t.Error("Flag innerInside data is invalid.")
+	}
+	flagAfter := flag.Lookup("outerAfter")
+	if flagAfter.Name != "outerAfter" || flagAfter.DefValue != "1" || flagAfter.Usage != "final remark" {
+		t.Error("Flag outerAfter data is invalid.")
+	}
+}
