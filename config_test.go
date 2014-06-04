@@ -2,6 +2,8 @@ package flagtag
 
 import (
 	"flag"
+	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -419,4 +421,51 @@ func TestMixedInnerStructProcessing(t *testing.T) {
 	if flagAfter.Name != "outerAfter" || flagAfter.DefValue != "1" || flagAfter.Usage != "final remark" {
 		t.Error("Flag outerAfter data is invalid.")
 	}
+}
+
+func TestRegisterTypeDerivedFromPrimitive(t *testing.T) {
+	var s = struct {
+		d aliasInt `flag:"flagValueAliasInt,-10,Alias of int, still works as primitive int flag."`
+	}{}
+	Configure(&s)
+	flagAlias := flag.Lookup("flagValueAliasInt")
+	if flagAlias == nil {
+		t.Fatal("Could not find defined flagValueAliasInt.")
+	}
+	if flagAlias.Name != "flagValueAliasInt" || flagAlias.DefValue != "-10" || flagAlias.Usage != "Alias of int, still works as primitive int flag." {
+		t.Error("Flag flagValueAliasInt data is invalid.")
+	}
+}
+
+type aliasInt int
+
+func TestRegisterValueInterfaceFlag(t *testing.T) {
+	var s = struct {
+		d dummyInt `flag:"flagValueDummyInt,,My first flag.Value implementation."`
+	}{}
+	err := Configure(&s)
+	if err != nil {
+		t.Fatal("Unexpected error: " + err.Error())
+	}
+	flagDummyInt := flag.Lookup("flagValueDummyInt")
+	if flagDummyInt == nil {
+		t.Fatal("Expected a flag, but got nil.")
+	}
+	fmt.Println("Still need to finish this test and other tests w.r.t. flag.Value.")
+	t.Skip("Still need to finish this test and other tests w.r.t. flag.Value.")
+}
+
+type dummyInt int
+
+func (d *dummyInt) String() string {
+	return strconv.Itoa(int(*d))
+}
+
+func (d *dummyInt) Set(value string) error {
+	fmt.Printf("Error: %s", value)
+	i, err := strconv.Atoi(value)
+	if err == nil {
+		*d = dummyInt(i)
+	}
+	return err
 }
