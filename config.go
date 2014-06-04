@@ -58,7 +58,7 @@ func ConfigureAndParse(config interface{}) error {
 // If an error occurs, this error will be returned and the configuration of
 // other struct fields will be aborted.
 func Configure(config interface{}) error {
-	val, err := checkType(config)
+	val, err := getStructValue(config)
 	if err != nil {
 		return err
 	}
@@ -68,73 +68,102 @@ func Configure(config interface{}) error {
 func configure(structType reflect.Type, baseAddr uintptr) error {
 	for i := 0; i < structType.NumField(); i++ {
 		f := (reflect.StructField)(structType.Field(i))
-		if f.Type.Kind() == reflect.Struct {
-			// kind is a struct => recurse into inner struct
-			if err := configure(f.Type, baseAddr+f.Offset); err != nil {
-				return err
-			}
-			continue
-		}
 		t := f.Tag.Get("flag")
 		if t == "" {
-			continue
-		}
-		tag := parseTag(t)
-		if tag.Name == "" {
-			return fmt.Errorf("invalid flag name: empty string")
-		}
-		var fieldptr = unsafe.Pointer(baseAddr + f.Offset)
-		// TODO support Duration
-		// TODO support Var (any variable via flag.Value interface)
-		switch f.Type.Kind() {
-		case reflect.String:
-			flag.StringVar((*string)(fieldptr), tag.Name, tag.DefaultValue, tag.Description)
-		case reflect.Bool:
-			defaultVal, err := strconv.ParseBool(tag.DefaultValue)
-			if err != nil {
-				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
+			// if field is not tagged then we do not need to flag the type itself
+			if f.Type.Kind() == reflect.Struct {
+				// kind is a struct => recurse into inner struct
+				if err := configure(f.Type, baseAddr+f.Offset); err != nil {
+					return err
+				}
 			}
-			flag.BoolVar((*bool)(fieldptr), tag.Name, defaultVal, tag.Description)
-		case reflect.Float64:
-			defaultVal, err := strconv.ParseFloat(tag.DefaultValue, 64)
-			if err != nil {
-				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
+		} else {
+			// field is tagged, continue investigating what kind of flag to create
+			tag := parseTag(t)
+			if tag.Name == "" {
+				// tag is invalid, since there is no name
+				return fmt.Errorf("invalid flag name: empty string")
 			}
-			flag.Float64Var((*float64)(fieldptr), tag.Name, defaultVal, tag.Description)
-		case reflect.Int:
-			// TODO parse exact number of available bits, or always 64?
-			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, f.Type.Bits())
-			if err != nil {
-				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
+			var fieldptr = unsafe.Pointer(baseAddr + f.Offset)
+			//if registerFlagByValueInterface(f.Type, fieldptr, &tag) {
+			//	// no error during registration, hence Var-flag registered
+			//	continue
+			//}
+			// TODO support Duration
+			if err := registerFlagByPrimitive(f.Name, f.Type, fieldptr, &tag); err != nil {
+				return err
 			}
-			flag.IntVar((*int)(fieldptr), tag.Name, int(defaultVal), tag.Description)
-		case reflect.Int64:
-			defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, 64)
-			if err != nil {
-				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
-			}
-			flag.Int64Var((*int64)(fieldptr), tag.Name, defaultVal, tag.Description)
-		case reflect.Uint:
-			// TODO parse exact number of available bits, or always 64?
-			defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, f.Type.Bits())
-			if err != nil {
-				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
-			}
-			flag.UintVar((*uint)(fieldptr), tag.Name, uint(defaultVal), tag.Description)
-		case reflect.Uint64:
-			defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, 64)
-			if err != nil {
-				return fmt.Errorf("invalid default value for field '%s': %s", f.Name, err.Error())
-			}
-			flag.Uint64Var((*uint64)(fieldptr), tag.Name, defaultVal, tag.Description)
-		default:
-			return fmt.Errorf("unsupported data type for field '%s'", f.Name)
 		}
 	}
 	return nil
 }
 
-func checkType(config interface{}) (reflect.Value, error) {
+func registerFlagByValueInterface(fieldType reflect.Type, fieldPointer unsafe.Pointer, tag *flagTag) bool {
+	// TODO does this implementation support all variants such as:
+	//  -> any primitive type
+	//  -> struct
+	//  -> pointer to struct
+	//  -> interface
+	var iface = (interface{})(reflect.NewAt(fieldType, fieldPointer))
+	if value, ok := iface.(flag.Value); ok {
+		// field type implements flag.Value interface, register as such
+		// TODO (how to) set default value? (i.e. ignore default value?)
+		flag.Var(value, tag.Name, tag.Description)
+		fmt.Printf("flag.Value is implemented.")
+		return true
+	}
+	return false
+}
+
+func registerFlagByPrimitive(fieldName string, fieldType reflect.Type, fieldPtr unsafe.Pointer, tag *flagTag) error {
+	switch fieldType.Kind() {
+	case reflect.String:
+		flag.StringVar((*string)(fieldPtr), tag.Name, tag.DefaultValue, tag.Description)
+	case reflect.Bool:
+		defaultVal, err := strconv.ParseBool(tag.DefaultValue)
+		if err != nil {
+			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+		}
+		flag.BoolVar((*bool)(fieldPtr), tag.Name, defaultVal, tag.Description)
+	case reflect.Float64:
+		defaultVal, err := strconv.ParseFloat(tag.DefaultValue, 64)
+		if err != nil {
+			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+		}
+		flag.Float64Var((*float64)(fieldPtr), tag.Name, defaultVal, tag.Description)
+	case reflect.Int:
+		// TODO parse exact number of available bits, or always 64?
+		defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, fieldType.Bits())
+		if err != nil {
+			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+		}
+		flag.IntVar((*int)(fieldPtr), tag.Name, int(defaultVal), tag.Description)
+	case reflect.Int64:
+		defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, 64)
+		if err != nil {
+			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+		}
+		flag.Int64Var((*int64)(fieldPtr), tag.Name, defaultVal, tag.Description)
+	case reflect.Uint:
+		// TODO parse exact number of available bits, or always 64?
+		defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, fieldType.Bits())
+		if err != nil {
+			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+		}
+		flag.UintVar((*uint)(fieldPtr), tag.Name, uint(defaultVal), tag.Description)
+	case reflect.Uint64:
+		defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, 64)
+		if err != nil {
+			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+		}
+		flag.Uint64Var((*uint64)(fieldPtr), tag.Name, defaultVal, tag.Description)
+	default:
+		return fmt.Errorf("unsupported data type for field '%s' (tag '%s')", fieldName, tag.Name)
+	}
+	return nil
+}
+
+func getStructValue(config interface{}) (reflect.Value, error) {
 	var zero reflect.Value
 	if config == nil {
 		return zero, fmt.Errorf("config cannot be nil")
