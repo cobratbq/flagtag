@@ -451,8 +451,37 @@ func TestRegisterValueInterfaceFlag(t *testing.T) {
 	if flagDummyInt == nil {
 		t.Fatal("Expected a flag, but got nil.")
 	}
-	fmt.Println("Still need to finish this test and other tests w.r.t. flag.Value.")
-	t.Skip("Still need to finish this test and other tests w.r.t. flag.Value.")
+	if flagDummyInt.Name != "flagValueDummyInt" || flagDummyInt.DefValue != "0" || flagDummyInt.Usage != "My first flag.Value implementation." {
+		t.Fatal("Flag data is invalid.")
+	}
+}
+
+func TestRegisterValueInterfaceFlagNilPointer(t *testing.T) {
+	var s = struct {
+		d *dummyInt `flag:"flagValueDummyIntNilPointer,,My first flag.Value implementation."`
+	}{}
+	err := Configure(&s)
+	if err == nil {
+		t.Fatal("Expected an error since the pointer is nil, but didn't get anything.")
+	}
+	t.Fatal("Skipping incomplete test ... currently error: " + err.Error())
+}
+
+func TestRegisterValueInterfaceFlagPointer(t *testing.T) {
+	var s = struct {
+		d *dummyInt `flag:"flagValueDummyIntPointer,,My first flag.Value implementation."`
+	}{d: new(dummyInt)}
+	err := Configure(&s)
+	if err != nil {
+		t.Fatal("Unexpected error: " + err.Error())
+	}
+	flagDummyInt := flag.Lookup("flagValueDummyIntPointer")
+	if flagDummyInt == nil {
+		t.Fatal("Expected a flag, but got nil.")
+	}
+	if flagDummyInt.Name != "flagValueDummyIntPointer" || flagDummyInt.DefValue != "0" || flagDummyInt.Usage != "My first flag.Value implementation." {
+		t.Fatal("Flag data is invalid.")
+	}
 }
 
 type dummyInt int
