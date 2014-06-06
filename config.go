@@ -86,7 +86,25 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 			}
 			var fieldptr = unsafe.Pointer(baseAddr + f.Offset)
 			var fieldtype = f.Type
-			if f.Type.Kind() == reflect.Ptr {
+			if fieldtype.Kind() == reflect.Interface {
+				// unwrap interface indirection
+				var ifValue = reflect.NewAt(fieldtype, fieldptr).Elem()
+				if ifValue.Interface() == nil {
+					// nil interface, return error
+					return fmt.Errorf("cannot use nil interface for flag target")
+				}
+				// non-nil interface, so continue investigation
+				if reflect.TypeOf(ifValue.Interface()).Kind() == reflect.Ptr && reflect.ValueOf(ifValue.Interface()).IsNil() {
+					// interface with nil pointer, return error
+					return fmt.Errorf("cannot use interface that contains nil pointer")
+				} else {
+					// actual interface with legitimate content
+					fieldtype = reflect.TypeOf(ifValue.Interface())
+					fieldptr = unsafe.Pointer(ifValue.UnsafeAddr())
+				}
+			}
+			if fieldtype.Kind() == reflect.Ptr {
+				// unwrap pointer indirection
 				var ptrTarget = reflect.NewAt(fieldtype, fieldptr).Elem()
 				if !ptrTarget.IsNil() {
 					fieldtype = fieldtype.Elem()

@@ -2,7 +2,6 @@ package flagtag
 
 import (
 	"flag"
-	"fmt"
 	"strconv"
 	"testing"
 )
@@ -511,6 +510,47 @@ func TestRegisterPrimitiveFlagPointer(t *testing.T) {
 	}
 }
 
+func TestRegisterPrimitiveFlagNilInterface(t *testing.T) {
+	var s = struct {
+		d interface{} `flag:"flagValueStringInterface,hello,My first primitive interface flag."`
+	}{}
+	err := Configure(&s)
+	if err == nil {
+		t.Fatal("Expected an error but got nothing.")
+	}
+}
+
+func TestRegisterPrimitiveFlagNonNilInterfaceNilValue(t *testing.T) {
+	var nilString *string
+	var s = struct {
+		d interface{} `flag:"flagValueStringInterface,hello,My first primitive interface flag."`
+	}{d: nilString}
+	defer func() {
+		recover()
+	}()
+	err := Configure(&s)
+	if err == nil {
+		t.Fatal("Expected an error but got nothing.")
+	}
+}
+
+func TestRegisterPrimitiveFlagInterface(t *testing.T) {
+	var s = struct {
+		d interface{} `flag:"flagValueStringInterface,hello,My first primitive interface flag."`
+	}{d: "testing ..."}
+	err := Configure(&s)
+	if err != nil {
+		t.Fatal("Unexpected error: " + err.Error())
+	}
+	flagInterface := flag.Lookup("flagValueStringInterface")
+	if flagInterface == nil {
+		t.Fatal("Expected a flag, but got nil.")
+	}
+	if flagInterface.Name != "flagValueStringInterface" || flagInterface.DefValue != "hello" || flagInterface.Usage != "My first primitive interface flag." {
+		t.Fatal("Flag data is invalid.")
+	}
+}
+
 type dummyInt int
 
 func (d *dummyInt) String() string {
@@ -518,7 +558,6 @@ func (d *dummyInt) String() string {
 }
 
 func (d *dummyInt) Set(value string) error {
-	fmt.Printf("Error: %s", value)
 	i, err := strconv.Atoi(value)
 	if err == nil {
 		*d = dummyInt(i)
