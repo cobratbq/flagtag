@@ -111,6 +111,7 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 					fieldptr = unsafe.Pointer(ptrTarget.Pointer())
 				}
 			}
+			// TODO create a tag hint for ignoring the ValueInterface check
 			if registerFlagByValueInterface(fieldtype, fieldptr, &tag) {
 				// no error during registration => Var-flag registered => continue with next field
 				continue
@@ -125,8 +126,6 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 }
 
 func registerFlagByValueInterface(fieldType reflect.Type, fieldPointer unsafe.Pointer, tag *flagTag) bool {
-	// TODO does this implementation support all variants such as:
-	//  -> interface
 	var iface = reflect.NewAt(fieldType, fieldPointer).Interface()
 	if value, ok := iface.(flag.Value); ok {
 		// field type implements flag.Value interface, register as such

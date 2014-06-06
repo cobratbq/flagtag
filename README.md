@@ -11,6 +11,13 @@ Who are potential users?
 ------------------------
 I have created this package specifically for those occasions where you do not want to spend a lot of time defining and fine tuning flags and command line arguments, for example when creating a rather basic command line tool. The package creates a direct mapping between flags and struct variables. Tags are simply declared using a '*flag*'-tag. A single function call will make all arrangements for your tagged variables in the background.
 
+The tag format
+--------------
+
+~~~
+flag:"<flag-name>,<default-value>,<usage-description>"
+~~~
+
 A basic example
 ---------------
 A basic example follows. Below the example there will be a small description of what the tags accomplish.
@@ -48,6 +55,24 @@ This basic program defines a type that stores some configuration values. Apart f
 * *-times* with the default amount of *1*.
 
 Go's *flag* package also provides a flag *-help* which prints help information. The last part of the tag defines a usage description that will be shown when help information is printed.
+
+Features
+--------
+
+* Based on the default behavior of *flag* package.
+* *flag*'s primitive types.
+* Types implementing *flag.Value*.
+* Recursively configuring nested structs (unless they themselves are tagged).
+* Either returning an error or panicking, whatever suits your needs.
+* Do a one-pass **configure &amp; parse** and be done with it, or configure multiple structs and/or define your own additional flags yourself.
+* Support for pointers and interfaces to variables. (It does not appreciate **nil**, though.)
+
+TODO
+----
+
+* Support for time.Duration type, as this is also supported by *flag*.
+* Finding out whether there is an appropriate way of setting defaults for [flag.Value](http://golang.org/pkg/flag/#Value) implementors.
+* A tag syntax that enables you to say that you want to skip checking for a correct flag.Value implementation (this does require a useable primitive type to be available)
 
 Compatibility note
 ------------------
