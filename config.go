@@ -85,12 +85,20 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 				return fmt.Errorf("invalid flag name: empty string")
 			}
 			var fieldptr = unsafe.Pointer(baseAddr + f.Offset)
-			if registerFlagByValueInterface(f.Type, fieldptr, &tag) {
+			var fieldtype = f.Type
+			if f.Type.Kind() == reflect.Ptr {
+				var ptrTarget = reflect.NewAt(fieldtype, fieldptr).Elem()
+				if !ptrTarget.IsNil() {
+					fieldtype = fieldtype.Elem()
+					fieldptr = unsafe.Pointer(ptrTarget.Pointer())
+				}
+			}
+			if registerFlagByValueInterface(fieldtype, fieldptr, &tag) {
 				// no error during registration => Var-flag registered => continue with next field
 				continue
 			}
 			// TODO support Duration
-			if err := registerFlagByPrimitive(f.Name, f.Type, fieldptr, &tag); err != nil {
+			if err := registerFlagByPrimitive(f.Name, fieldtype, fieldptr, &tag); err != nil {
 				return err
 			}
 		}
@@ -100,10 +108,6 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 
 func registerFlagByValueInterface(fieldType reflect.Type, fieldPointer unsafe.Pointer, tag *flagTag) bool {
 	// TODO does this implementation support all variants such as:
-	//  -> any primitive type
-	//  -> pointer to any primitive type
-	//  -> struct
-	//  -> pointer to struct
 	//  -> interface
 	var iface = reflect.NewAt(fieldType, fieldPointer).Interface()
 	if value, ok := iface.(flag.Value); ok {

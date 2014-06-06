@@ -464,7 +464,6 @@ func TestRegisterValueInterfaceFlagNilPointer(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected an error since the pointer is nil, but didn't get anything.")
 	}
-	t.Fatal("Skipping incomplete test ... currently error: " + err.Error())
 }
 
 func TestRegisterValueInterfaceFlagPointer(t *testing.T) {
@@ -480,6 +479,34 @@ func TestRegisterValueInterfaceFlagPointer(t *testing.T) {
 		t.Fatal("Expected a flag, but got nil.")
 	}
 	if flagDummyInt.Name != "flagValueDummyIntPointer" || flagDummyInt.DefValue != "0" || flagDummyInt.Usage != "My first flag.Value implementation." {
+		t.Fatal("Flag data is invalid.")
+	}
+}
+
+func TestRegisterPrimitiveFlagNilPointer(t *testing.T) {
+	var s = struct {
+		d *int `flag:"flagValueIntPointer,123,My first primitive pointer flag."`
+	}{}
+	err := Configure(&s)
+	if err == nil {
+		t.Fatal("Expected an error but got nothing.")
+	}
+}
+
+func TestRegisterPrimitiveFlagPointer(t *testing.T) {
+	var s = struct {
+		d *int `flag:"flagValueIntPointer,123,My first primitive pointer flag."`
+	}{d: new(int)}
+	*s.d = 123
+	err := Configure(&s)
+	if err != nil {
+		t.Fatal("Unexpected error: " + err.Error())
+	}
+	flagInt := flag.Lookup("flagValueIntPointer")
+	if flagInt == nil {
+		t.Fatal("Expected a flag, but got nil.")
+	}
+	if flagInt.Name != "flagValueIntPointer" || flagInt.DefValue != "123" || flagInt.Usage != "My first primitive pointer flag." {
 		t.Fatal("Flag data is invalid.")
 	}
 }
