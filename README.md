@@ -1,5 +1,6 @@
-flagtag, a Go command line flag support package
-===============================================
+flagtag
+=======
+*... a Go command line flag support package*
 
 *flagtag* is a little package that focuses on providing very quick &amp; easy support for connecting command line arguments to variables. The package provides a **flag** tag and a mechanism for automatically discovering tagged variables for which to set up flags.
 
@@ -7,9 +8,9 @@ By using this mechanism you have to do only very little programming. Variables w
 
 This flag configurator is based on Go's [flag package](http://golang.org/pkg/flag/) and facilitates struct field tags. The function scans the provided variables for tags and automatically defines flags for tagged variables based on the content of the flag tag.
 
-Who are potential users?
+When to use this package?
 ------------------------
-I have created this package specifically for those occasions where you do not want to spend a lot of time defining and fine tuning flags and command line arguments, for example when creating a rather basic command line tool. The package creates a direct mapping between flags and struct variables. Tags are simply declared using a '*flag*'-tag. A single function call will make all arrangements for your tagged variables in the background.
+I have created this package specifically for those occasions where you do not want to spend a lot of time defining and fine tuning flags and command line arguments. For example, when creating a rather basic command line tool. The package creates a direct mapping between flags and struct fields. Tags are simply declared using a '*flag*'-tag. A single function call will make all arrangements for your tagged variables in the background.
 
 The tag format
 --------------
@@ -60,12 +61,12 @@ Features
 --------
 
 * Based on the default behavior of *flag* package.
-* *flag*'s primitive types.
-* Types implementing *flag.Value*.
+* Supports *flag*'s primitive types.
+* Any types that implement the [*flag.Value*](http://golang.org/pkg/flag/#Value) interface.
 * Recursively configuring nested structs (unless they themselves are tagged).
 * Either returning an error or panicking, whatever suits your needs.
-* Do a one-pass **configure &amp; parse** and be done with it, or configure multiple structs and/or define your own additional flags yourself.
-* Support for pointers and interfaces to variables. (It does not appreciate **nil**, though.)
+* Do a one-pass **configure &amp; parse** and be done with it, or configure multiple structs and/or define your own additional flags yourself. You can define your own flags interchangibly with using the flagtag package.
+* Support for pointers and interfaces to variables. (It does not appreciate **nil** though.)
 
 TODO
 ----
