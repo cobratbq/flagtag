@@ -49,7 +49,7 @@ func main() {
 
 This basic program defines a type that stores some configuration values. Apart from the default values you may wish to provide support for users to provide alternative configurations via command line arguments. Using this package you accomplish the same by defining an appropriate tag.
 
-3 flags are being defined, namelijk:
+3 flags are being defined:
 
 * *-greet* with default value '*Hello*',
 * *-name* with the default value '*User*',
