@@ -67,11 +67,11 @@ Features
 * Either returning an error or panicking, whatever suits your needs.
 * Do a one-pass **configure &amp; parse** and be done with it, or configure multiple structs and/or define your own additional flags yourself. You can define your own flags interchangibly with using the flagtag package.
 * Support for pointers and interfaces to variables. (It does not appreciate **nil** though.)
+* Support for time.Duration type, as this is also supported by *flag*.
 
 TODO
 ----
 
-* Support for time.Duration type, as this is also supported by *flag*.
 * Finding out whether there is an appropriate way of setting defaults for [flag.Value](http://golang.org/pkg/flag/#Value) implementors.
 * A tag syntax that enables you to say that you want to skip checking for a correct flag.Value implementation (this does require a useable primitive type to be available)
 

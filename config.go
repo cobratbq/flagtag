@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 	"unsafe"
 )
 
@@ -137,6 +138,18 @@ func registerFlagByValueInterface(fieldType reflect.Type, fieldPointer unsafe.Po
 }
 
 func registerFlagByPrimitive(fieldName string, fieldType reflect.Type, fieldPtr unsafe.Pointer, tag *flagTag) error {
+	// Check time.Duration first, since it will also match one of the basic kinds.
+	var value = reflect.NewAt(fieldType, fieldPtr).Interface()
+	if durationVar, ok := value.(*time.Duration); ok {
+		// field is a time.Duration
+		defaultVal, err := time.ParseDuration(tag.DefaultValue)
+		if err != nil {
+			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+		}
+		flag.DurationVar(durationVar, tag.Name, defaultVal, tag.Description)
+		return nil
+	}
+	// Check basic kinds.
 	switch fieldType.Kind() {
 	case reflect.String:
 		flag.StringVar((*string)(fieldPtr), tag.Name, tag.DefaultValue, tag.Description)

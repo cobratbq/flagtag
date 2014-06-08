@@ -4,6 +4,7 @@ import (
 	"flag"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestConfigureNil(t *testing.T) {
@@ -563,4 +564,58 @@ func (d *dummyInt) Set(value string) error {
 		*d = dummyInt(i)
 	}
 	return err
+}
+
+func TestRegisterDurationNilPointer(t *testing.T) {
+	var s = struct {
+		d *time.Duration `flag:"flagDuration,1h,Specify duration"`
+	}{}
+	err := Configure(&s)
+	if err == nil {
+		t.Fatal("Expected an error because of nil pointer.")
+	}
+}
+
+func TestRegisterDuration(t *testing.T) {
+	var s = struct {
+		d time.Duration `flag:"flagDuration,1h,Specify duration"`
+	}{}
+	err := Configure(&s)
+	if err != nil {
+		t.Fatal("Unexpected error: " + err.Error())
+	}
+	flagInterface := flag.Lookup("flagDuration")
+	if flagInterface == nil {
+		t.Fatal("Expected a flag, but got nil.")
+	}
+	if flagInterface.Name != "flagDuration" || flagInterface.DefValue != "1h0m0s" || flagInterface.Usage != "Specify duration" {
+		t.Fatal("Flag data is invalid.")
+	}
+}
+
+func TestRegisterDurationBadDefault(t *testing.T) {
+	var s = struct {
+		d time.Duration `flag:"flagDuration,1abcde,Specify duration"`
+	}{}
+	err := Configure(&s)
+	if err == nil {
+		t.Fatal("Expected error because of bad defaults.")
+	}
+}
+
+func TestRegisterDurationPointer(t *testing.T) {
+	var s = struct {
+		d *time.Duration `flag:"flagDurationPointer,1h,Specify duration"`
+	}{d: new(time.Duration)}
+	err := Configure(&s)
+	if err != nil {
+		t.Fatal("Unexpected error: " + err.Error())
+	}
+	flagInterface := flag.Lookup("flagDurationPointer")
+	if flagInterface == nil {
+		t.Fatal("Expected a flag, but got nil.")
+	}
+	if flagInterface.Name != "flagDurationPointer" || flagInterface.DefValue != "1h0m0s" || flagInterface.Usage != "Specify duration" {
+		t.Fatal("Flag data is invalid.")
+	}
 }
