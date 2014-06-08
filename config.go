@@ -117,7 +117,6 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 				// no error during registration => Var-flag registered => continue with next field
 				continue
 			}
-			// TODO support Duration
 			if err := registerFlagByPrimitive(f.Name, fieldtype, fieldptr, &tag); err != nil {
 				return err
 			}

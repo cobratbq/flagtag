@@ -67,7 +67,7 @@ Features
 * Any types that implement the [*flag.Value*](http://golang.org/pkg/flag/#Value) interface.
 * Recursively configuring nested structs (unless they themselves are tagged).
 * Either returning an error or panicking, whatever suits your needs.
-* Do a one-pass **configure &amp; parse** and be done with it, or configure multiple structs and/or define your own additional flags yourself. You can define your own flags interchangibly with using the flagtag package.
+* Do a one-pass **configure &amp; parse** and be done with it, or configure multiple structs and/or define your own additional flags yourself. You can define your own flags interchangeably with using the flagtag package.
 
 TODO
 ----
@@ -78,4 +78,4 @@ TODO
 Compatibility note
 ------------------
 
-*flagtag* is fully compatible with Go's flag package. It simply uses the facilities offered by the [flag package](http://golang.org/pkg/flag/). It is also possible to use *flagtag* interchangably with the flag package itself. As with the flag package, you have to be sure that flags have not been parsed yet, while still configuring the flags.
+*flagtag* is fully compatible with Go's flag package. It simply uses the facilities offered by the [flag package](http://golang.org/pkg/flag/). It is also possible to use *flagtag* interchangeably with the flag package itself. As with the flag package, you have to be sure that flags have not been parsed yet, while still configuring the flags.
