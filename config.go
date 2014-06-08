@@ -87,7 +87,7 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 			var fieldptr = unsafe.Pointer(baseAddr + f.Offset)
 			var fieldtype = f.Type
 			if fieldtype.Kind() == reflect.Interface {
-				// unwrap interface indirection
+				// unwrap interface
 				var ifValue = reflect.NewAt(fieldtype, fieldptr).Elem()
 				if ifValue.Interface() == nil {
 					// nil interface, return error
@@ -103,12 +103,13 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 				fieldptr = unsafe.Pointer(ifValue.UnsafeAddr())
 			}
 			if fieldtype.Kind() == reflect.Ptr {
-				// unwrap pointer indirection
+				// unwrap pointer
 				var ptrTarget = reflect.NewAt(fieldtype, fieldptr).Elem()
-				if !ptrTarget.IsNil() {
-					fieldtype = fieldtype.Elem()
-					fieldptr = unsafe.Pointer(ptrTarget.Pointer())
+				if ptrTarget.IsNil() {
+					return fmt.Errorf("cannot use nil pointer")
 				}
+				fieldtype = fieldtype.Elem()
+				fieldptr = unsafe.Pointer(ptrTarget.Pointer())
 			}
 			// TODO create a tag hint for ignoring the ValueInterface check
 			if registerFlagByValueInterface(fieldtype, fieldptr, &tag) {
