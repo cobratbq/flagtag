@@ -61,13 +61,13 @@ Features
 --------
 
 * Based on the default behavior of *flag* package.
-* Supports *flag*'s primitive types.
+* Supports *flag*'s primitive types. (And types derived from these primitive types.)
+* Support for type [*time.Duration*](http://golang.org/pkg/time/#Duration), as this is also supported by *flag*.
+* Support for pointers and interfaces to variables. (It does not appreciate **nil** though.)
 * Any types that implement the [*flag.Value*](http://golang.org/pkg/flag/#Value) interface.
 * Recursively configuring nested structs (unless they themselves are tagged).
 * Either returning an error or panicking, whatever suits your needs.
 * Do a one-pass **configure &amp; parse** and be done with it, or configure multiple structs and/or define your own additional flags yourself. You can define your own flags interchangibly with using the flagtag package.
-* Support for pointers and interfaces to variables. (It does not appreciate **nil** though.)
-* Support for time.Duration type, as this is also supported by *flag*.
 
 TODO
 ----
