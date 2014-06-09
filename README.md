@@ -69,11 +69,11 @@ Features
 * Either returning an error or panicking, whatever suits your needs.
 * Do a one-pass **configure &amp; parse** and be done with it, or configure multiple structs and/or define your own additional flags yourself. You can define your own flags interchangeably with using the flagtag package.
 
-TODO
-----
+Under consideration
+-------------------
 
 * Finding out whether there is an appropriate way of setting defaults for [flag.Value](http://golang.org/pkg/flag/#Value) implementors.
-* A tag syntax that enables you to say that you want to skip checking for a correct flag.Value implementation (this does require a useable primitive type to be available)
+* A tag syntax for expressing that you want to skip checking for a correct flag.Value implementation (this does require a useable primitive type to be available)
 
 Compatibility note
 ------------------
