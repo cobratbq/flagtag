@@ -66,6 +66,11 @@ func Configure(config interface{}) error {
 	return configure(val.Type(), val.UnsafeAddr())
 }
 
+// configure (recursively) configures flags as they are discovered in the provided type and base pointer.
+// In case of an error, the error is returned. Possible errors are:
+// - Invalid default values.
+// - nil interface or pointer provided.
+// - Tagged variable uses unsupported data type.
 func configure(structType reflect.Type, baseAddr uintptr) error {
 	for i := 0; i < structType.NumField(); i++ {
 		f := (reflect.StructField)(structType.Field(i))
@@ -125,6 +130,8 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 	return nil
 }
 
+// registerFlagByValueInterface checks if the provided type can be treated as flag.Value.
+// If so, a flag.Value flag is set and true is returned. If no flag is set, false is returned.
 func registerFlagByValueInterface(fieldType reflect.Type, fieldPointer unsafe.Pointer, tag *flagTag) bool {
 	var iface = reflect.NewAt(fieldType, fieldPointer).Interface()
 	if value, ok := iface.(flag.Value); ok {
@@ -136,6 +143,11 @@ func registerFlagByValueInterface(fieldType reflect.Type, fieldPointer unsafe.Po
 	return false
 }
 
+// registerFlagByPrimitive registers a single field as one of the primitive flag types. Types are matched by
+// kind, so types derived from one of the basic types are still eligible for a flag.
+//
+// If it is not possible to register a flag because of an unknown type, an error will be returned.
+// If the default value is invalid, an error will be returned.
 func registerFlagByPrimitive(fieldName string, fieldType reflect.Type, fieldPtr unsafe.Pointer, tag *flagTag) error {
 	// Check time.Duration first, since it will also match one of the basic kinds.
 	var value = reflect.NewAt(fieldType, fieldPtr).Interface()
@@ -196,6 +208,7 @@ func registerFlagByPrimitive(fieldName string, fieldType reflect.Type, fieldPtr 
 	return nil
 }
 
+// getStructValue checks that the provided config instance is actually a struct not a nil value.
 func getStructValue(config interface{}) (reflect.Value, error) {
 	var zero reflect.Value
 	if config == nil {
@@ -212,6 +225,7 @@ func getStructValue(config interface{}) (reflect.Value, error) {
 	return val, nil
 }
 
+// parseTag parses a string of text and separates the various sections of the 'flag'-tag.
 func parseTag(value string) flagTag {
 	parts := strings.SplitN(value, ",", 3)
 	for len(parts) < 3 {
@@ -220,6 +234,7 @@ func parseTag(value string) flagTag {
 	return flagTag{Name: parts[0], DefaultValue: parts[1], Description: parts[2]}
 }
 
+// flagTag contains the parsed tag values
 type flagTag struct {
 	Name         string
 	DefaultValue string

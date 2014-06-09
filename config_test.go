@@ -13,6 +13,17 @@ func TestConfigureNil(t *testing.T) {
 	}
 }
 
+func TestConfigureUntaggedStruct(t *testing.T) {
+	var s = struct {
+		a int
+		b uint
+		c string
+	}{}
+	if err := Configure(&s); err != nil {
+		t.Fatal("Unexpected error: " + err.Error())
+	}
+}
+
 func TestConfigureNilPointer(t *testing.T) {
 	var c *struct{}
 	var p interface{}
