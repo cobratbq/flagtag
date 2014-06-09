@@ -1,3 +1,6 @@
+/*
+Package flagtag provides support for creating command line flags by tagging appropriate struct fields with the 'flag' tag.
+*/
 package flagtag
 
 import (
@@ -49,12 +52,15 @@ func ConfigureAndParse(config interface{}) error {
 //
 // The 'flag' tag consists of 3 parts, similar to the *Var-functions of the
 // flag package. Parts are separated by a comma. The parts are:
-// - 1st: flag name
-// - 2nd: default value
-// - 3rd: usage description
-// Example tag: `flag:"verbose,false,Enable verbose output."`.
+//  - 1st: flag name
+//  - 2nd: default value
+//  - 3rd: usage description
+//
+// Example:
+//  `flag:"verbose,false,Enable verbose output."`.
+//
 // This will create a flag 'verbose', which defaults to 'false' and shows usage
-// information "Enables default output.".
+// information "Enable verbose output.".
 //
 // If an error occurs, this error will be returned and the configuration of
 // other struct fields will be aborted.
