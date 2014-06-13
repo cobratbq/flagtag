@@ -69,7 +69,7 @@ func Configure(config interface{}) error {
 	if err != nil {
 		return err
 	}
-	return configure(val.Type(), val)
+	return configure(val)
 }
 
 // configure (recursively) configures flags as they are discovered in the provided type and value.
@@ -77,7 +77,8 @@ func Configure(config interface{}) error {
 // - Invalid default values.
 // - nil pointer provided.
 // - Tagged variable uses unsupported data type.
-func configure(structType reflect.Type, structValue reflect.Value) error {
+func configure(structValue reflect.Value) error {
+	var structType = structValue.Type()
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
 		fieldType := field.Type
@@ -87,7 +88,7 @@ func configure(structType reflect.Type, structValue reflect.Value) error {
 			// if field is not tagged then we do not need to flag the type itself
 			if fieldType.Kind() == reflect.Struct {
 				// kind is a struct => recurse into inner struct
-				if err := configure(fieldType, fieldValue); err != nil {
+				if err := configure(fieldValue); err != nil {
 					return err
 				}
 			}
@@ -96,25 +97,25 @@ func configure(structType reflect.Type, structValue reflect.Value) error {
 			tag := parseTag(t)
 			if tag.Name == "" {
 				// tag is invalid, since there is no name
-				return fmt.Errorf("invalid flag name: empty string")
+				return fmt.Errorf("field '%s': invalid flag name: empty string", field.Name)
 			}
 			if fieldType.Kind() == reflect.Ptr {
 				// unwrap pointer
 				if fieldValue.IsNil() {
-					return fmt.Errorf("cannot use nil pointer")
+					return fmt.Errorf("field '%s' (tag '%s'): cannot use nil pointer", field.Name, tag.Name)
 				}
 				fieldType = fieldType.Elem()
 				fieldValue = fieldValue.Elem()
 			}
 			if !fieldValue.CanSet() {
-				return fmt.Errorf("field is unexported or unaddressable - cannot use this field")
+				return fmt.Errorf("field '%s' (tag '%s') is unexported or unaddressable: cannot use this field", field.Name, tag.Name)
 			}
 			// TODO create a tag hint for ignoring the ValueInterface check
-			if registerFlagByValueInterface(fieldType, fieldValue, &tag) {
+			if registerFlagByValueInterface(fieldValue, &tag) {
 				// no error during registration => Var-flag registered => continue with next field
 				continue
 			}
-			if err := registerFlagByPrimitive(field.Name, fieldType, fieldValue, &tag); err != nil {
+			if err := registerFlagByPrimitive(field.Name, fieldValue, &tag); err != nil {
 				return err
 			}
 		}
@@ -124,7 +125,7 @@ func configure(structType reflect.Type, structValue reflect.Value) error {
 
 // registerFlagByValueInterface checks if the provided type can be treated as flag.Value.
 // If so, a flag.Value flag is set and true is returned. If no flag is set, false is returned.
-func registerFlagByValueInterface(fieldType reflect.Type, fieldValue reflect.Value, tag *flagTag) bool {
+func registerFlagByValueInterface(fieldValue reflect.Value, tag *flagTag) bool {
 	if value, ok := fieldValue.Addr().Interface().(flag.Value); ok {
 		// field type implements flag.Value interface, register as such
 		// TODO (how to) set default value? (i.e. ignore default value?)
@@ -139,7 +140,8 @@ func registerFlagByValueInterface(fieldType reflect.Type, fieldValue reflect.Val
 //
 // If it is not possible to register a flag because of an unknown type, an error will be returned.
 // If the default value is invalid, an error will be returned.
-func registerFlagByPrimitive(fieldName string, fieldType reflect.Type, fieldValue reflect.Value, tag *flagTag) error {
+func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *flagTag) error {
+	var fieldType = fieldValue.Type()
 	// Check time.Duration first, since it will also match one of the basic kinds.
 	if durationVar, ok := fieldValue.Addr().Interface().(*time.Duration); ok {
 		// field is a time.Duration
