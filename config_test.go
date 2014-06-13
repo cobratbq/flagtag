@@ -15,9 +15,9 @@ func TestConfigureNil(t *testing.T) {
 
 func TestConfigureUntaggedStruct(t *testing.T) {
 	var s = struct {
-		a int
-		b uint
-		c string
+		A int
+		B uint
+		C string
 	}{}
 	if err := Configure(&s); err != nil {
 		t.Fatal("Unexpected error: " + err.Error())
@@ -26,9 +26,7 @@ func TestConfigureUntaggedStruct(t *testing.T) {
 
 func TestConfigureNilPointer(t *testing.T) {
 	var c *struct{}
-	var p interface{}
-	p = c
-	if Configure(p) == nil {
+	if Configure(c) == nil {
 		t.Fatal("Expected an error, since pointer is nil.")
 	}
 }
@@ -49,7 +47,7 @@ func TestEmptyStruct(t *testing.T) {
 
 func TestNonTaggedStruct(t *testing.T) {
 	var s = struct {
-		v string
+		V string
 	}{}
 	if Configure(&s) != nil {
 		t.Fatal("Expected correct processing of struct without any tags.")
@@ -58,16 +56,25 @@ func TestNonTaggedStruct(t *testing.T) {
 
 func TestNonRelevantlyTaggedStruct(t *testing.T) {
 	var s = struct {
-		v string `json:"some,value"`
+		V string `json:"some,value"`
 	}{}
 	if Configure(&s) != nil {
 		t.Fatal("Expected correct processing of struct without any relevant tags.")
 	}
 }
 
+func TestUnexportedTaggedField(t *testing.T) {
+	var s = struct {
+		v string `flag:"unexported,unexported,Tagging an unexported value."`
+	}{}
+	if Configure(&s) == nil {
+		t.Fatal("Expected error regarding unexported field, but got nothing.")
+	}
+}
+
 func TestEmptyTagName(t *testing.T) {
 	var s = struct {
-		v string `flag:",,"`
+		V string `flag:",,"`
 	}{}
 	if Configure(&s) == nil {
 		t.Fatal("Expected error because no flag name was specified.")
@@ -76,7 +83,7 @@ func TestEmptyTagName(t *testing.T) {
 
 func TestIncompleteTag(t *testing.T) {
 	var s = struct {
-		v string `flag:"a"`
+		V string `flag:"a"`
 	}{}
 	if Configure(&s) != nil {
 		t.Fatal("Expected correct processing even though tag does not contain all parts.")
@@ -98,7 +105,7 @@ func TestIncompleteTag(t *testing.T) {
 
 func TestTagString(t *testing.T) {
 	var s = struct {
-		v string `flag:"s,hello world,This sets the string flag."`
+		V string `flag:"s,hello world,This sets the string flag."`
 	}{}
 	if Configure(&s) != nil {
 		t.Fatal("Expected correct configuration without any errors.")
@@ -120,7 +127,7 @@ func TestTagString(t *testing.T) {
 
 func TestTagBool(t *testing.T) {
 	var s = struct {
-		v bool `flag:"b,true,This sets the bool flag."`
+		V bool `flag:"b,true,This sets the bool flag."`
 	}{}
 	if Configure(&s) != nil {
 		t.Fatal("Expected correct configuration without any errors.")
@@ -142,7 +149,7 @@ func TestTagBool(t *testing.T) {
 
 func TestTagBoolInvalidDefault(t *testing.T) {
 	var s = struct {
-		v bool `flag:"b2,foo,This sets the bool flag."`
+		V bool `flag:"b2,foo,This sets the bool flag."`
 	}{}
 	if Configure(&s) == nil {
 		t.Fatal("Expected error due to incorrect default value.")
@@ -151,7 +158,7 @@ func TestTagBoolInvalidDefault(t *testing.T) {
 
 func TestTagFloat64(t *testing.T) {
 	var s = struct {
-		v float64 `flag:"f,0.2345,This sets the float flag."`
+		V float64 `flag:"f,0.2345,This sets the float flag."`
 	}{}
 	if Configure(&s) != nil {
 		t.Fatal("Expected correct configuration without any errors.")
@@ -173,7 +180,7 @@ func TestTagFloat64(t *testing.T) {
 
 func TestTagFloat64InvalidDefault(t *testing.T) {
 	var s = struct {
-		v float64 `flag:"f2,abcde,This sets the float64 flag."`
+		V float64 `flag:"f2,abcde,This sets the float64 flag."`
 	}{}
 	if Configure(&s) == nil {
 		t.Fatal("Expected error due to incorrect default value.")
@@ -182,7 +189,7 @@ func TestTagFloat64InvalidDefault(t *testing.T) {
 
 func TestTagInt(t *testing.T) {
 	var s = struct {
-		v int `flag:"i,64,This sets the int flag."`
+		V int `flag:"i,64,This sets the int flag."`
 	}{}
 	if Configure(&s) != nil {
 		t.Fatal("Expected correct configuration without any errors.")
@@ -204,7 +211,7 @@ func TestTagInt(t *testing.T) {
 
 func TestTagIntInvalidDefault(t *testing.T) {
 	var s = struct {
-		v int `flag:"i2,0.33333,This sets the int flag."`
+		V int `flag:"i2,0.33333,This sets the int flag."`
 	}{}
 	if Configure(&s) == nil {
 		t.Fatal("Expected error due to incorrect default value.")
@@ -213,7 +220,7 @@ func TestTagIntInvalidDefault(t *testing.T) {
 
 func TestTagInt64(t *testing.T) {
 	var s = struct {
-		v int64 `flag:"i64,-6400000000,This sets the int64 flag."`
+		V int64 `flag:"i64,-6400000000,This sets the int64 flag."`
 	}{}
 	if Configure(&s) != nil {
 		t.Fatal("Expected correct configuration without any errors.")
@@ -235,7 +242,7 @@ func TestTagInt64(t *testing.T) {
 
 func TestTagInt64InvalidDefault(t *testing.T) {
 	var s = struct {
-		v int64 `flag:"i64-2,abcdefgh,This sets the int64 flag."`
+		V int64 `flag:"i64-2,abcdefgh,This sets the int64 flag."`
 	}{}
 	if Configure(&s) == nil {
 		t.Fatal("Expected error due to incorrect default value.")
@@ -244,7 +251,7 @@ func TestTagInt64InvalidDefault(t *testing.T) {
 
 func TestTagUint(t *testing.T) {
 	var s = struct {
-		v uint `flag:"u,3200,This sets the uint flag."`
+		V uint `flag:"u,3200,This sets the uint flag."`
 	}{}
 	if Configure(&s) != nil {
 		t.Fatal("Expected correct configuration without any errors.")
@@ -266,7 +273,7 @@ func TestTagUint(t *testing.T) {
 
 func TestTagUintInvalidDefault(t *testing.T) {
 	var s = struct {
-		v uint `flag:"u2,-200,This sets the uint flag."`
+		V uint `flag:"u2,-200,This sets the uint flag."`
 	}{}
 	if Configure(&s) == nil {
 		t.Fatal("Expected error due to incorrect default value.")
@@ -275,7 +282,7 @@ func TestTagUintInvalidDefault(t *testing.T) {
 
 func TestTagUint64(t *testing.T) {
 	var s = struct {
-		v uint64 `flag:"u64,6400000000,This sets the uint64 flag."`
+		V uint64 `flag:"u64,6400000000,This sets the uint64 flag."`
 	}{}
 	if Configure(&s) != nil {
 		t.Fatal("Expected correct configuration without any errors.")
@@ -297,7 +304,7 @@ func TestTagUint64(t *testing.T) {
 
 func TestTagUint64InvalidDefault(t *testing.T) {
 	var s = struct {
-		v uint64 `flag:"u64-2,abcdefgh,This sets the uint64 flag."`
+		V uint64 `flag:"u64-2,abcdefgh,This sets the uint64 flag."`
 	}{}
 	if Configure(&s) == nil {
 		t.Fatal("Expected error due to incorrect default value.")
@@ -310,7 +317,7 @@ func TestMustConfigure(t *testing.T) {
 		recover()
 	}()
 	var s = struct {
-		x bool `flag:"x,test,test"`
+		X bool `flag:"x,test,test"`
 	}{}
 	MustConfigure(&s)
 	t.FailNow()
@@ -318,8 +325,8 @@ func TestMustConfigure(t *testing.T) {
 
 func TestConfigureAndParse(t *testing.T) {
 	var s = struct {
-		x string `flag:"xx,test,Test 1."`
-		y bool   `flag:"y,f,Test 2."`
+		X string `flag:"xx,test,Test 1."`
+		Y bool   `flag:"y,f,Test 2."`
 	}{}
 	if err := ConfigureAndParse(&s); err != nil {
 		t.Fatal("Did not expect error: " + err.Error())
@@ -331,7 +338,7 @@ func TestConfigureAndParse(t *testing.T) {
 
 func TestConfigureAndParseFaulty(t *testing.T) {
 	var s = struct {
-		y bool `flag:"y,bla,Test 2."`
+		Y bool `flag:"y,bla,Test 2."`
 	}{}
 	if err := ConfigureAndParse(&s); err == nil {
 		t.Fatal("Expected an error but got nothing.")
@@ -344,7 +351,7 @@ func TestMustConfigureAndParseFailing(t *testing.T) {
 		recover()
 	}()
 	var s = struct {
-		x bool `flag:"xxx,test,test"`
+		X bool `flag:"xxx,test,test"`
 	}{}
 	MustConfigureAndParse(&s)
 	t.FailNow()
@@ -352,7 +359,7 @@ func TestMustConfigureAndParseFailing(t *testing.T) {
 
 func TestMustConfigureAndParseSuccessfully(t *testing.T) {
 	var s = struct {
-		x bool `flag:"xxxx,True,test"`
+		X bool `flag:"xxxx,True,test"`
 	}{}
 	MustConfigureAndParse(&s)
 	if !flag.Parsed() {
@@ -362,7 +369,7 @@ func TestMustConfigureAndParseSuccessfully(t *testing.T) {
 
 func TestErrorOnInvalidDataType(t *testing.T) {
 	var s = struct {
-		invalid uintptr `flag:"xxxxxx,,"`
+		Invalid uintptr `flag:"xxxxxx,,"`
 	}{}
 	if err := Configure(&s); err == nil {
 		t.Fatal("Expected error because of unsupported data type.")
@@ -371,8 +378,8 @@ func TestErrorOnInvalidDataType(t *testing.T) {
 
 func TestRecursiveStructProcessing(t *testing.T) {
 	var outer = struct {
-		inner struct {
-			v int `flag:"innerv,1"`
+		Inner struct {
+			V int `flag:"innerv,1"`
 		}
 	}{}
 	err := Configure(&outer)
@@ -396,8 +403,8 @@ func TestRecursiveStructProcessing(t *testing.T) {
 
 func TestBadInnerStruct(t *testing.T) {
 	var outer = struct {
-		inner struct {
-			v uint `flag:"innerv,-1"`
+		Inner struct {
+			V uint `flag:"innerv,-1"`
 		}
 	}{}
 	err := Configure(&outer)
@@ -408,13 +415,13 @@ func TestBadInnerStruct(t *testing.T) {
 
 func TestMixedInnerStructProcessing(t *testing.T) {
 	var outer = struct {
-		before uint `flag:"outerBefore,3,some description"`
-		blank  uint
-		inner  struct {
-			dummy  int
-			inside string `flag:"innerInside,2,inside information"`
+		Before uint `flag:"outerBefore,3,some description"`
+		Blank  uint
+		Inner  struct {
+			Dummy  int
+			Inside string `flag:"innerInside,2,inside information"`
 		}
-		after int `flag:"outerAfter,1,final remark"`
+		After int `flag:"outerAfter,1,final remark"`
 	}{}
 	err := Configure(&outer)
 	if err != nil {
@@ -436,7 +443,7 @@ func TestMixedInnerStructProcessing(t *testing.T) {
 
 func TestRegisterTypeDerivedFromPrimitive(t *testing.T) {
 	var s = struct {
-		d aliasInt `flag:"flagValueAliasInt,-10,Alias of int, still works as primitive int flag."`
+		D aliasInt `flag:"flagValueAliasInt,-10,Alias of int, still works as primitive int flag."`
 	}{}
 	Configure(&s)
 	flagAlias := flag.Lookup("flagValueAliasInt")
@@ -452,7 +459,7 @@ type aliasInt int
 
 func TestRegisterValueInterfaceFlag(t *testing.T) {
 	var s = struct {
-		d dummyInt `flag:"flagValueDummyInt,,My first flag.Value implementation."`
+		D dummyInt `flag:"flagValueDummyInt,,My first flag.Value implementation."`
 	}{}
 	err := Configure(&s)
 	if err != nil {
@@ -469,7 +476,7 @@ func TestRegisterValueInterfaceFlag(t *testing.T) {
 
 func TestRegisterValueInterfaceFlagNilPointer(t *testing.T) {
 	var s = struct {
-		d *dummyInt `flag:"flagValueDummyIntNilPointer,,My first flag.Value implementation."`
+		D *dummyInt `flag:"flagValueDummyIntNilPointer,,My first flag.Value implementation."`
 	}{}
 	err := Configure(&s)
 	if err == nil {
@@ -479,8 +486,8 @@ func TestRegisterValueInterfaceFlagNilPointer(t *testing.T) {
 
 func TestRegisterValueInterfaceFlagPointer(t *testing.T) {
 	var s = struct {
-		d *dummyInt `flag:"flagValueDummyIntPointer,,My first flag.Value implementation."`
-	}{d: new(dummyInt)}
+		D *dummyInt `flag:"flagValueDummyIntPointer,,My first flag.Value implementation."`
+	}{D: new(dummyInt)}
 	err := Configure(&s)
 	if err != nil {
 		t.Fatal("Unexpected error: " + err.Error())
@@ -496,7 +503,7 @@ func TestRegisterValueInterfaceFlagPointer(t *testing.T) {
 
 func TestRegisterPrimitiveFlagNilPointer(t *testing.T) {
 	var s = struct {
-		d *int `flag:"flagValueIntPointer,123,My first primitive pointer flag."`
+		D *int `flag:"flagValueIntPointer,123,My first primitive pointer flag."`
 	}{}
 	err := Configure(&s)
 	if err == nil {
@@ -506,9 +513,9 @@ func TestRegisterPrimitiveFlagNilPointer(t *testing.T) {
 
 func TestRegisterPrimitiveFlagPointer(t *testing.T) {
 	var s = struct {
-		d *int `flag:"flagValueIntPointer,123,My first primitive pointer flag."`
-	}{d: new(int)}
-	*s.d = 123
+		D *int `flag:"flagValueIntPointer,123,My first primitive pointer flag."`
+	}{D: new(int)}
+	*s.D = 123
 	err := Configure(&s)
 	if err != nil {
 		t.Fatal("Unexpected error: " + err.Error())
@@ -518,47 +525,6 @@ func TestRegisterPrimitiveFlagPointer(t *testing.T) {
 		t.Fatal("Expected a flag, but got nil.")
 	}
 	if flagInt.Name != "flagValueIntPointer" || flagInt.DefValue != "123" || flagInt.Usage != "My first primitive pointer flag." {
-		t.Fatal("Flag data is invalid.")
-	}
-}
-
-func TestRegisterPrimitiveFlagNilInterface(t *testing.T) {
-	var s = struct {
-		d interface{} `flag:"flagValueStringInterface,hello,My first primitive interface flag."`
-	}{}
-	err := Configure(&s)
-	if err == nil {
-		t.Fatal("Expected an error but got nothing.")
-	}
-}
-
-func TestRegisterPrimitiveFlagNonNilInterfaceNilValue(t *testing.T) {
-	var nilString *string
-	var s = struct {
-		d interface{} `flag:"flagValueStringInterface,hello,My first primitive interface flag."`
-	}{d: nilString}
-	defer func() {
-		recover()
-	}()
-	err := Configure(&s)
-	if err == nil {
-		t.Fatal("Expected an error but got nothing.")
-	}
-}
-
-func TestRegisterPrimitiveFlagInterface(t *testing.T) {
-	var s = struct {
-		d interface{} `flag:"flagValueStringInterface,hello,My first primitive interface flag."`
-	}{d: "testing ..."}
-	err := Configure(&s)
-	if err != nil {
-		t.Fatal("Unexpected error: " + err.Error())
-	}
-	flagInterface := flag.Lookup("flagValueStringInterface")
-	if flagInterface == nil {
-		t.Fatal("Expected a flag, but got nil.")
-	}
-	if flagInterface.Name != "flagValueStringInterface" || flagInterface.DefValue != "hello" || flagInterface.Usage != "My first primitive interface flag." {
 		t.Fatal("Flag data is invalid.")
 	}
 }
@@ -579,7 +545,7 @@ func (d *dummyInt) Set(value string) error {
 
 func TestRegisterDurationNilPointer(t *testing.T) {
 	var s = struct {
-		d *time.Duration `flag:"flagDuration,1h,Specify duration"`
+		D *time.Duration `flag:"flagDuration,1h,Specify duration"`
 	}{}
 	err := Configure(&s)
 	if err == nil {
@@ -589,7 +555,7 @@ func TestRegisterDurationNilPointer(t *testing.T) {
 
 func TestRegisterDuration(t *testing.T) {
 	var s = struct {
-		d time.Duration `flag:"flagDuration,1h,Specify duration"`
+		D time.Duration `flag:"flagDuration,1h,Specify duration"`
 	}{}
 	err := Configure(&s)
 	if err != nil {
@@ -606,7 +572,7 @@ func TestRegisterDuration(t *testing.T) {
 
 func TestRegisterDurationBadDefault(t *testing.T) {
 	var s = struct {
-		d time.Duration `flag:"flagDuration,1abcde,Specify duration"`
+		D time.Duration `flag:"flagDuration,1abcde,Specify duration"`
 	}{}
 	err := Configure(&s)
 	if err == nil {
@@ -616,8 +582,8 @@ func TestRegisterDurationBadDefault(t *testing.T) {
 
 func TestRegisterDurationPointer(t *testing.T) {
 	var s = struct {
-		d *time.Duration `flag:"flagDurationPointer,1h,Specify duration"`
-	}{d: new(time.Duration)}
+		D *time.Duration `flag:"flagDurationPointer,1h,Specify duration"`
+	}{D: new(time.Duration)}
 	err := Configure(&s)
 	if err != nil {
 		t.Fatal("Unexpected error: " + err.Error())

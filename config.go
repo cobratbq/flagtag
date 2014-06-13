@@ -69,23 +69,25 @@ func Configure(config interface{}) error {
 	if err != nil {
 		return err
 	}
-	return configure(val.Type(), val.UnsafeAddr())
+	return configure(val.Type(), val)
 }
 
-// configure (recursively) configures flags as they are discovered in the provided type and base pointer.
+// configure (recursively) configures flags as they are discovered in the provided type and value.
 // In case of an error, the error is returned. Possible errors are:
 // - Invalid default values.
-// - nil interface or pointer provided.
+// - nil pointer provided.
 // - Tagged variable uses unsupported data type.
-func configure(structType reflect.Type, baseAddr uintptr) error {
+func configure(structType reflect.Type, structValue reflect.Value) error {
 	for i := 0; i < structType.NumField(); i++ {
-		f := (reflect.StructField)(structType.Field(i))
-		t := f.Tag.Get("flag")
+		field := structType.Field(i)
+		fieldType := field.Type
+		fieldValue := structValue.Field(i)
+		t := field.Tag.Get("flag")
 		if t == "" {
 			// if field is not tagged then we do not need to flag the type itself
-			if f.Type.Kind() == reflect.Struct {
+			if fieldType.Kind() == reflect.Struct {
 				// kind is a struct => recurse into inner struct
-				if err := configure(f.Type, baseAddr+f.Offset); err != nil {
+				if err := configure(fieldType, fieldValue); err != nil {
 					return err
 				}
 			}
@@ -96,39 +98,23 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 				// tag is invalid, since there is no name
 				return fmt.Errorf("invalid flag name: empty string")
 			}
-			var fieldptr = unsafe.Pointer(baseAddr + f.Offset)
-			var fieldtype = f.Type
-			if fieldtype.Kind() == reflect.Interface {
-				// unwrap interface
-				var ifValue = reflect.NewAt(fieldtype, fieldptr).Elem()
-				if ifValue.Interface() == nil {
-					// nil interface, return error
-					return fmt.Errorf("cannot use nil interface for flag target")
-				}
-				// non-nil interface, so continue investigation
-				if reflect.TypeOf(ifValue.Interface()).Kind() == reflect.Ptr && reflect.ValueOf(ifValue.Interface()).IsNil() {
-					// interface with nil pointer, return error
-					return fmt.Errorf("cannot use interface that contains nil pointer")
-				}
-				// actual interface with legitimate content
-				fieldtype = reflect.TypeOf(ifValue.Interface())
-				fieldptr = unsafe.Pointer(ifValue.UnsafeAddr())
-			}
-			if fieldtype.Kind() == reflect.Ptr {
+			if fieldType.Kind() == reflect.Ptr {
 				// unwrap pointer
-				var ptrTarget = reflect.NewAt(fieldtype, fieldptr).Elem()
-				if ptrTarget.IsNil() {
+				if fieldValue.IsNil() {
 					return fmt.Errorf("cannot use nil pointer")
 				}
-				fieldtype = fieldtype.Elem()
-				fieldptr = unsafe.Pointer(ptrTarget.Pointer())
+				fieldType = fieldType.Elem()
+				fieldValue = fieldValue.Elem()
+			}
+			if !fieldValue.CanSet() {
+				return fmt.Errorf("field is unexported or unaddressable - cannot use this field")
 			}
 			// TODO create a tag hint for ignoring the ValueInterface check
-			if registerFlagByValueInterface(fieldtype, fieldptr, &tag) {
+			if registerFlagByValueInterface(fieldType, fieldValue, &tag) {
 				// no error during registration => Var-flag registered => continue with next field
 				continue
 			}
-			if err := registerFlagByPrimitive(f.Name, fieldtype, fieldptr, &tag); err != nil {
+			if err := registerFlagByPrimitive(field.Name, fieldType, fieldValue, &tag); err != nil {
 				return err
 			}
 		}
@@ -138,9 +124,8 @@ func configure(structType reflect.Type, baseAddr uintptr) error {
 
 // registerFlagByValueInterface checks if the provided type can be treated as flag.Value.
 // If so, a flag.Value flag is set and true is returned. If no flag is set, false is returned.
-func registerFlagByValueInterface(fieldType reflect.Type, fieldPointer unsafe.Pointer, tag *flagTag) bool {
-	var iface = reflect.NewAt(fieldType, fieldPointer).Interface()
-	if value, ok := iface.(flag.Value); ok {
+func registerFlagByValueInterface(fieldType reflect.Type, fieldValue reflect.Value, tag *flagTag) bool {
+	if value, ok := fieldValue.Addr().Interface().(flag.Value); ok {
 		// field type implements flag.Value interface, register as such
 		// TODO (how to) set default value? (i.e. ignore default value?)
 		flag.Var(value, tag.Name, tag.Description)
@@ -154,10 +139,9 @@ func registerFlagByValueInterface(fieldType reflect.Type, fieldPointer unsafe.Po
 //
 // If it is not possible to register a flag because of an unknown type, an error will be returned.
 // If the default value is invalid, an error will be returned.
-func registerFlagByPrimitive(fieldName string, fieldType reflect.Type, fieldPtr unsafe.Pointer, tag *flagTag) error {
+func registerFlagByPrimitive(fieldName string, fieldType reflect.Type, fieldValue reflect.Value, tag *flagTag) error {
 	// Check time.Duration first, since it will also match one of the basic kinds.
-	var value = reflect.NewAt(fieldType, fieldPtr).Interface()
-	if durationVar, ok := value.(*time.Duration); ok {
+	if durationVar, ok := fieldValue.Addr().Interface().(*time.Duration); ok {
 		// field is a time.Duration
 		defaultVal, err := time.ParseDuration(tag.DefaultValue)
 		if err != nil {
@@ -167,6 +151,7 @@ func registerFlagByPrimitive(fieldName string, fieldType reflect.Type, fieldPtr 
 		return nil
 	}
 	// Check basic kinds.
+	var fieldPtr = unsafe.Pointer(fieldValue.UnsafeAddr())
 	switch fieldType.Kind() {
 	case reflect.String:
 		flag.StringVar((*string)(fieldPtr), tag.Name, tag.DefaultValue, tag.Description)
