@@ -529,6 +529,55 @@ func TestRegisterPrimitiveFlagPointer(t *testing.T) {
 	}
 }
 
+func TestRegisterFlagValueThroughInterfaceNil(t *testing.T) {
+	var s = struct {
+		D interface{} `flag:"flagValueUnknownInterface,,Value which turns out is flag.Value compatible."`
+	}{}
+	err := Configure(&s)
+	if err == nil {
+		t.Fatal("Expected error because D is nil.")
+	}
+}
+
+func TestRegisterFlagValueThroughInterfaceValueNilPointer(t *testing.T) {
+	var v *dummyInt
+	var s = struct {
+		D interface{} `flag:"flagValueUnknownInterface,,Value which turns out is flag.Value compatible."`
+	}{D: v}
+	err := Configure(&s)
+	if err == nil {
+		t.Fatal("Expected error because D is nil.")
+	}
+}
+
+func TestRegisterFlagValueThroughInterfaceValueZeroValue(t *testing.T) {
+	var v dummyInt
+	var s = struct {
+		D interface{} `flag:"flagValueUnknownInterface,,Value which turns out is flag.Value compatible."`
+	}{D: v}
+	err := Configure(&s)
+	if err == nil {
+		t.Fatal("Expected error because D is nil.")
+	}
+}
+
+func TestRegisterFlagValueThroughInterface(t *testing.T) {
+	var s = struct {
+		D interface{} `flag:"flagValueUnknownInterface,,Value which turns out is flag.Value compatible."`
+	}{D: new(dummyInt)}
+	err := Configure(&s)
+	if err != nil {
+		t.Fatal("Unexpected error: " + err.Error())
+	}
+	flagUnknown := flag.Lookup("flagValueUnknownInterface")
+	if flagUnknown == nil {
+		t.Fatal("Expected a flag, but got nil.")
+	}
+	if flagUnknown.Name != "flagValueUnknownInterface" || flagUnknown.DefValue != "0" || flagUnknown.Usage != "Value which turns out is flag.Value compatible." {
+		t.Fatal("Flag data is invalid.")
+	}
+}
+
 type dummyInt int
 
 func (d *dummyInt) String() string {

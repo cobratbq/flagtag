@@ -99,13 +99,26 @@ func configure(structValue reflect.Value) error {
 				// tag is invalid, since there is no name
 				return fmt.Errorf("field '%s': invalid flag name: empty string", field.Name)
 			}
-			if fieldType.Kind() == reflect.Ptr {
+			switch fieldType.Kind() {
+			case reflect.Ptr:
 				// unwrap pointer
 				if fieldValue.IsNil() {
 					return fmt.Errorf("field '%s' (tag '%s'): cannot use nil pointer", field.Name, tag.Name)
 				}
 				fieldType = fieldType.Elem()
 				fieldValue = fieldValue.Elem()
+			case reflect.Interface:
+				// check if interface is valid
+				if fieldValue.IsNil() {
+					return fmt.Errorf("field '%s' (tag '%s'): cannot use nil interface", field.Name, tag.Name)
+				}
+				var value = reflect.ValueOf(fieldValue.Interface())
+				switch value.Type().Kind() {
+				case reflect.Ptr, reflect.Interface:
+					if value.IsNil() {
+						return fmt.Errorf("field '%s' (tag '%s'): cannot use nil interface value", field.Name, tag.Name)
+					}
+				}
 			}
 			if !fieldValue.CanSet() {
 				return fmt.Errorf("field '%s' (tag '%s') is unexported or unaddressable: cannot use this field", field.Name, tag.Name)
@@ -126,11 +139,21 @@ func configure(structValue reflect.Value) error {
 // registerFlagByValueInterface checks if the provided type can be treated as flag.Value.
 // If so, a flag.Value flag is set and true is returned. If no flag is set, false is returned.
 func registerFlagByValueInterface(fieldValue reflect.Value, tag *flagTag) bool {
-	if value, ok := fieldValue.Addr().Interface().(flag.Value); ok {
-		// field type implements flag.Value interface, register as such
-		// TODO (how to) set default value? (i.e. ignore default value?)
-		flag.Var(value, tag.Name, tag.Description)
-		return true
+	switch fieldValue.Type().Kind() {
+	case reflect.Interface:
+		if value, ok := fieldValue.Interface().(flag.Value); ok {
+			// unknown interface implements flag.Value, register as such
+			// TODO (how to) set default value? (i.e. ignore default value?)
+			flag.Var(value, tag.Name, tag.Description)
+			return true
+		}
+	default:
+		if value, ok := fieldValue.Addr().Interface().(flag.Value); ok {
+			// field type implements flag.Value interface, register as such
+			// TODO (how to) set default value? (i.e. ignore default value?)
+			flag.Var(value, tag.Name, tag.Description)
+			return true
+		}
 	}
 	return false
 }
@@ -143,13 +166,13 @@ func registerFlagByValueInterface(fieldValue reflect.Value, tag *flagTag) bool {
 func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *flagTag) error {
 	var fieldType = fieldValue.Type()
 	// Check time.Duration first, since it will also match one of the basic kinds.
-	if durationVar, ok := fieldValue.Addr().Interface().(*time.Duration); ok {
+	if durationVar, ok := fieldValue.Interface().(time.Duration); ok {
 		// field is a time.Duration
 		defaultVal, err := time.ParseDuration(tag.DefaultValue)
 		if err != nil {
 			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
 		}
-		flag.DurationVar(durationVar, tag.Name, defaultVal, tag.Description)
+		flag.DurationVar(&durationVar, tag.Name, defaultVal, tag.Description)
 		return nil
 	}
 	// Check basic kinds.
@@ -196,7 +219,7 @@ func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *fl
 		}
 		flag.Uint64Var((*uint64)(fieldPtr), tag.Name, defaultVal, tag.Description)
 	default:
-		return fmt.Errorf("unsupported data type for field '%s' (tag '%s')", fieldName, tag.Name)
+		return fmt.Errorf("unsupported data type (kind '%d') for field '%s' (tag '%s')", fieldType.Kind(), fieldName, tag.Name)
 	}
 	return nil
 }
