@@ -3,6 +3,7 @@ package flagtag
 import (
 	"flag"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -643,5 +644,18 @@ func TestRegisterDurationPointer(t *testing.T) {
 	}
 	if flagInterface.Name != "flagDurationPointer" || flagInterface.DefValue != "1h0m0s" || flagInterface.Usage != "Specify duration" {
 		t.Fatal("Flag data is invalid.")
+	}
+}
+
+func TestErrInvalidDefault(t *testing.T) {
+	var s = struct {
+		D int `flag:"flagInvalidDefault,abcde,Test invalid defaults..."`
+	}{}
+	err := Configure(&s)
+	if err == nil {
+		t.Fatal("Error was expected but got nothing.")
+	}
+	if !strings.HasPrefix(err.Error(), "invalid default value for field 'D' (tag 'flagInvalidDefault'): ") {
+		t.Fatal("Expected a different error message than was provided.")
 	}
 }

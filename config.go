@@ -4,8 +4,8 @@ Package flagtag provides support for creating command line flags by tagging appr
 package flagtag
 
 import (
+	"errors"
 	"flag"
-	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -74,8 +74,10 @@ func Configure(config interface{}) error {
 
 // configure (recursively) configures flags as they are discovered in the provided type and value.
 // In case of an error, the error is returned. Possible errors are:
-// - Invalid default values.
+// - Invalid default values, error of type ErrInvalidDefault.
 // - nil pointer provided.
+// - nil interface provided.
+// - interface to nil value provided.
 // - Tagged variable uses unsupported data type.
 func configure(structValue reflect.Value) error {
 	var structType = structValue.Type()
@@ -97,31 +99,31 @@ func configure(structValue reflect.Value) error {
 			tag := parseTag(t)
 			if tag.Name == "" {
 				// tag is invalid, since there is no name
-				return fmt.Errorf("field '%s': invalid flag name: empty string", field.Name)
+				return errors.New("field '" + field.Name + "': invalid flag name: empty string")
 			}
 			switch fieldType.Kind() {
 			case reflect.Ptr:
 				// unwrap pointer
 				if fieldValue.IsNil() {
-					return fmt.Errorf("field '%s' (tag '%s'): cannot use nil pointer", field.Name, tag.Name)
+					return errors.New("field '" + field.Name + "' (tag '" + tag.Name + "'): cannot use nil pointer")
 				}
 				fieldType = fieldType.Elem()
 				fieldValue = fieldValue.Elem()
 			case reflect.Interface:
 				// check if interface is valid
 				if fieldValue.IsNil() {
-					return fmt.Errorf("field '%s' (tag '%s'): cannot use nil interface", field.Name, tag.Name)
+					return errors.New("field '" + field.Name + "' (tag '" + tag.Name + "'): cannot use nil interface")
 				}
 				var value = reflect.ValueOf(fieldValue.Interface())
 				switch value.Type().Kind() {
 				case reflect.Ptr, reflect.Interface:
 					if value.IsNil() {
-						return fmt.Errorf("field '%s' (tag '%s'): cannot use nil interface value", field.Name, tag.Name)
+						return errors.New("field '" + field.Name + "' (tag '" + tag.Name + "'): cannot use nil interface value")
 					}
 				}
 			}
 			if !fieldValue.CanSet() {
-				return fmt.Errorf("field '%s' (tag '%s') is unexported or unaddressable: cannot use this field", field.Name, tag.Name)
+				return errors.New("field '" + field.Name + "' (tag '" + tag.Name + "') is unexported or unaddressable: cannot use this field")
 			}
 			// TODO create a tag hint for ignoring the ValueInterface check
 			if registerFlagByValueInterface(fieldValue, &tag) {
@@ -170,7 +172,7 @@ func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *fl
 		// field is a time.Duration
 		defaultVal, err := time.ParseDuration(tag.DefaultValue)
 		if err != nil {
-			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
 		flag.DurationVar(&durationVar, tag.Name, defaultVal, tag.Description)
 		return nil
@@ -183,43 +185,41 @@ func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *fl
 	case reflect.Bool:
 		defaultVal, err := strconv.ParseBool(tag.DefaultValue)
 		if err != nil {
-			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
 		flag.BoolVar((*bool)(fieldPtr), tag.Name, defaultVal, tag.Description)
 	case reflect.Float64:
 		defaultVal, err := strconv.ParseFloat(tag.DefaultValue, 64)
 		if err != nil {
-			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
 		flag.Float64Var((*float64)(fieldPtr), tag.Name, defaultVal, tag.Description)
 	case reflect.Int:
-		// TODO parse exact number of available bits, or always 64?
 		defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, fieldType.Bits())
 		if err != nil {
-			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
 		flag.IntVar((*int)(fieldPtr), tag.Name, int(defaultVal), tag.Description)
 	case reflect.Int64:
 		defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, 64)
 		if err != nil {
-			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
 		flag.Int64Var((*int64)(fieldPtr), tag.Name, defaultVal, tag.Description)
 	case reflect.Uint:
-		// TODO parse exact number of available bits, or always 64?
 		defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, fieldType.Bits())
 		if err != nil {
-			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
 		flag.UintVar((*uint)(fieldPtr), tag.Name, uint(defaultVal), tag.Description)
 	case reflect.Uint64:
 		defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, 64)
 		if err != nil {
-			return fmt.Errorf("invalid default value for field '%s' (tag '%s'): %s", fieldName, tag.Name, err.Error())
+			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
 		flag.Uint64Var((*uint64)(fieldPtr), tag.Name, defaultVal, tag.Description)
 	default:
-		return fmt.Errorf("unsupported data type (kind '%d') for field '%s' (tag '%s')", fieldType.Kind(), fieldName, tag.Name)
+		return errors.New("unsupported data type (kind '" + strconv.FormatUint(uint64(fieldType.Kind()), 10) + "') for field '" + fieldName + "' (tag '" + tag.Name + "')")
 	}
 	return nil
 }
@@ -228,15 +228,15 @@ func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *fl
 func getStructValue(config interface{}) (reflect.Value, error) {
 	var zero reflect.Value
 	if config == nil {
-		return zero, fmt.Errorf("config cannot be nil")
+		return zero, errors.New("config cannot be nil")
 	}
 	ptr := reflect.ValueOf(config)
 	if ptr.IsNil() {
-		return zero, fmt.Errorf("config cannot point to nil")
+		return zero, errors.New("config cannot point to nil")
 	}
 	val := reflect.Indirect(ptr)
 	if val.Kind() != reflect.Struct {
-		return zero, fmt.Errorf("config instance is not a struct")
+		return zero, errors.New("config instance is not a struct")
 	}
 	return val, nil
 }
@@ -255,4 +255,14 @@ type flagTag struct {
 	Name         string
 	DefaultValue string
 	Description  string
+}
+
+type ErrInvalidDefault struct {
+	field string
+	tag   string
+	err   error
+}
+
+func (e *ErrInvalidDefault) Error() string {
+	return "invalid default value for field '" + e.field + "' (tag '" + e.tag + "'): " + e.err.Error()
 }
