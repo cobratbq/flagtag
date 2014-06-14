@@ -168,13 +168,13 @@ func registerFlagByValueInterface(fieldValue reflect.Value, tag *flagTag) bool {
 func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *flagTag) error {
 	var fieldType = fieldValue.Type()
 	// Check time.Duration first, since it will also match one of the basic kinds.
-	if durationVar, ok := fieldValue.Interface().(time.Duration); ok {
+	if durationVar, ok := fieldValue.Addr().Interface().(*time.Duration); ok {
 		// field is a time.Duration
 		defaultVal, err := time.ParseDuration(tag.DefaultValue)
 		if err != nil {
 			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
-		flag.DurationVar(&durationVar, tag.Name, defaultVal, tag.Description)
+		flag.DurationVar(durationVar, tag.Name, defaultVal, tag.Description)
 		return nil
 	}
 	// Check basic kinds.
