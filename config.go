@@ -163,8 +163,8 @@ func registerFlagByValueInterface(fieldValue reflect.Value, tag *flagTag) bool {
 // registerFlagByPrimitive registers a single field as one of the primitive flag types. Types are matched by
 // kind, so types derived from one of the basic types are still eligible for a flag.
 //
-// If it is not possible to register a flag because of an unknown type, an error will be returned.
-// If the default value is invalid, an error will be returned.
+// If it is not possible to register a flag because of an unknown data type, an error will be returned.
+// If the specified default value is invalid, an error of type ErrInvalidDefault will be returned.
 func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *flagTag) error {
 	var fieldType = fieldValue.Type()
 	// Check time.Duration first, since it will also match one of the basic kinds.

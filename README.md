@@ -61,9 +61,10 @@ Features
 --------
 
 * Based on the default behavior of *flag* package.
-* Supports *flag*'s primitive types. (And types derived from these primitive types.)
+* Supports *flag*'s primitive types,
+* and supports types derived from these primitive types.
 * Support for type [*time.Duration*](http://golang.org/pkg/time/#Duration), as this is also supported by *flag*.
-* Support for pointers and interfaces to variables. (It does not appreciate **nil** though.)
+* Support for pointers and interfaces to variables. (It does **not** appreciate *nil* though.)
 * Any types that implement the [*flag.Value*](http://golang.org/pkg/flag/#Value) interface.
 * Recursively configuring nested structs (unless they themselves are tagged).
 * Either returning an error or panicking, whatever suits your needs.
