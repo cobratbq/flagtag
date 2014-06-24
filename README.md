@@ -74,7 +74,11 @@ Under consideration
 -------------------
 
 * Finding out whether there is an appropriate way of setting defaults for [flag.Value](http://golang.org/pkg/flag/#Value) implementors.
+  * zero-length to indicate no defaults are desired
+  * non-zero length to indicate default. Make default the first set-operation, then set in case the flag is provided, and don't do anything otherwise.
 * A tag syntax for expressing that you want to skip checking for a correct flag.Value implementation (this does require a useable primitive type to be available)
+  * Use tag 'flagopt' to express additional flag options, such as skip flag.Value interface testing.
+  * Define syntax for use w/ and w/o value, such that the flagopt tag can be extended at a later time.
 
 Compatibility note
 ------------------

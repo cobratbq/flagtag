@@ -96,7 +96,7 @@ func configure(structValue reflect.Value) error {
 			}
 		} else {
 			// field is tagged, continue investigating what kind of flag to create
-			tag := parseTag(t)
+			tag := parseTag(t, field.Tag.Get("flagopt"))
 			if tag.Name == "" {
 				// tag is invalid, since there is no name
 				return errors.New("field '" + field.Name + "': invalid flag name: empty string")
@@ -126,7 +126,7 @@ func configure(structValue reflect.Value) error {
 				return errors.New("field '" + field.Name + "' (tag '" + tag.Name + "') is unexported or unaddressable: cannot use this field")
 			}
 			// TODO create a tag hint for ignoring the ValueInterface check
-			if registerFlagByValueInterface(fieldValue, &tag) {
+			if !tag.Options.skipFlagValue && registerFlagByValueInterface(fieldValue, &tag) {
 				// no error during registration => Var-flag registered => continue with next field
 				continue
 			}
@@ -242,12 +242,18 @@ func getStructValue(config interface{}) (reflect.Value, error) {
 }
 
 // parseTag parses a string of text and separates the various sections of the 'flag'-tag.
-func parseTag(value string) flagTag {
+func parseTag(value string, optvalue string) flagTag {
 	parts := strings.SplitN(value, ",", 3)
 	for len(parts) < 3 {
 		parts = append(parts, "")
 	}
-	return flagTag{Name: parts[0], DefaultValue: parts[1], Description: parts[2]}
+	var flag = flagTag{Name: parts[0], DefaultValue: parts[1], Description: parts[2]}
+	if optvalue != "" {
+		if strings.Contains(optvalue, "skipFlagValue") {
+			flag.Options.skipFlagValue = true
+		}
+	}
+	return flag
 }
 
 // flagTag contains the parsed tag values
@@ -255,6 +261,7 @@ type flagTag struct {
 	Name         string
 	DefaultValue string
 	Description  string
+	Options      flagoptTag
 }
 
 type ErrInvalidDefault struct {
@@ -265,4 +272,9 @@ type ErrInvalidDefault struct {
 
 func (e *ErrInvalidDefault) Error() string {
 	return "invalid default value for field '" + e.field + "' (tag '" + e.tag + "'): " + e.err.Error()
+}
+
+// flagoptTag contains the parsed additional flag options
+type flagoptTag struct {
+	skipFlagValue bool
 }
