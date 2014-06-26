@@ -125,7 +125,6 @@ func configure(structValue reflect.Value) error {
 			if !fieldValue.CanSet() {
 				return errors.New("field '" + field.Name + "' (tag '" + tag.Name + "') is unexported or unaddressable: cannot use this field")
 			}
-			// TODO create a tag hint for ignoring the ValueInterface check
 			if !tag.Options.skipFlagValue && registerFlagByValueInterface(fieldValue, &tag) {
 				// no error during registration => Var-flag registered => continue with next field
 				continue
