@@ -668,8 +668,8 @@ func TestNoFlagOptionsProvided(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unexpected error: " + err.Error())
 	}
-	if s.D != 0 {
-		t.Fatal("Expected value 0, because we don't skip the flag.Value interface test.")
+	if s.D != 42 {
+		t.Fatal("Expected value 42, because we don't skip the flag.Value interface test.")
 	}
 }
 
@@ -681,8 +681,8 @@ func TestFlagOptionsSkipFlagValueFalseProvided(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unexpected error:", err.Error())
 	}
-	if s.D != 0 {
-		t.Fatal("Expected value 0, because we don't skip the flag.Value interface test, but got", s.D)
+	if s.D != 42 {
+		t.Fatal("Expected value 42, because we don't skip the flag.Value interface test, but got", s.D)
 	}
 }
 
@@ -696,6 +696,32 @@ func TestNoFlagOptionsSkipFlagValueProvided(t *testing.T) {
 	}
 	if s.D != 13 {
 		t.Fatal("Expected value 13, because we skip the flag.Value interface test, but got", s.D)
+	}
+}
+
+func TestNoFlagValueDefaults(t *testing.T) {
+	var s = struct {
+		D flagoptInt `flag:"flagNoFlagValue,,Test flag no options ..."`
+	}{}
+	err := Configure(&s)
+	if err != nil {
+		t.Fatal("Unexpected error: ", err.Error())
+	}
+	if s.D != 0 {
+		t.Fatal("Expected value 0, because we skip the flag.Value interface test, but got", s.D)
+	}
+}
+
+func TestWithFlagValueDefaults(t *testing.T) {
+	var s = struct {
+		D flagoptInt `flag:"flagWithFlagValue,12,Test flag no options ..."`
+	}{}
+	err := Configure(&s)
+	if err != nil {
+		t.Fatal("Unexpected error: ", err.Error())
+	}
+	if s.D != 42 {
+		t.Fatal("Expected value 0, because we skip the flag.Value interface test, but got", s.D)
 	}
 }
 

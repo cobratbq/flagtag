@@ -140,23 +140,27 @@ func configure(structValue reflect.Value) error {
 // registerFlagByValueInterface checks if the provided type can be treated as flag.Value.
 // If so, a flag.Value flag is set and true is returned. If no flag is set, false is returned.
 func registerFlagByValueInterface(fieldValue reflect.Value, tag *flagTag) bool {
+	var value flag.Value
 	switch fieldValue.Type().Kind() {
 	case reflect.Interface:
-		if value, ok := fieldValue.Interface().(flag.Value); ok {
-			// unknown interface implements flag.Value, register as such
-			// TODO (how to) set default value? (i.e. ignore default value?)
-			flag.Var(value, tag.Name, tag.Description)
-			return true
+		var ok bool
+		value, ok = fieldValue.Interface().(flag.Value)
+		if !ok {
+			return false
 		}
 	default:
-		if value, ok := fieldValue.Addr().Interface().(flag.Value); ok {
-			// field type implements flag.Value interface, register as such
-			// TODO (how to) set default value? (i.e. ignore default value?)
-			flag.Var(value, tag.Name, tag.Description)
-			return true
+		var ok bool
+		value, ok = fieldValue.Addr().Interface().(flag.Value)
+		if !ok {
+			return false
 		}
 	}
-	return false
+	flag.Var(value, tag.Name, tag.Description)
+	if tag.DefaultValue != "" {
+		// a default value is provided, first call value.Set() with the provided default value
+		value.Set(tag.DefaultValue)
+	}
+	return true
 }
 
 // registerFlagByPrimitive registers a single field as one of the primitive flag types. Types are matched by
