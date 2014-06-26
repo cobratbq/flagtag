@@ -181,6 +181,7 @@ func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *fl
 		return nil
 	}
 	// Check basic kinds.
+	// TODO convert to detected kind without using unsafe
 	var fieldPtr = unsafe.Pointer(fieldValue.UnsafeAddr())
 	switch fieldType.Kind() {
 	case reflect.String:
