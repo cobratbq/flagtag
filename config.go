@@ -125,7 +125,7 @@ func configure(structValue reflect.Value) error {
 			if !fieldValue.CanSet() {
 				return errors.New("field '" + field.Name + "' (tag '" + tag.Name + "') is unexported or unaddressable: cannot use this field")
 			}
-			if !tag.Options.skipFlagValue && registerFlagByValueInterface(fieldValue, &tag) {
+			if !tag.Options.SkipFlagValue && registerFlagByValueInterface(fieldValue, &tag) {
 				// no error during registration => Var-flag registered => continue with next field
 				continue
 			}
@@ -254,28 +254,30 @@ func parseTag(value string, optvalue string) flagTag {
 	var flag = flagTag{Name: parts[0], DefaultValue: parts[1], Description: parts[2]}
 	if optvalue != "" {
 		if strings.Contains(optvalue, "skipFlagValue") {
-			flag.Options.skipFlagValue = true
+			flag.Options.SkipFlagValue = true
 		}
 	}
 	return flag
 }
 
-// flagTag contains the parsed tag values
+// flagTag contains the parsed tag values.
 type flagTag struct {
 	Name         string
 	DefaultValue string
 	Description  string
 	Options      struct {
-		skipFlagValue bool
+		SkipFlagValue bool
 	}
 }
 
+// ErrInvalidDefault is an error type for the case of invalid defaults.
 type ErrInvalidDefault struct {
 	field string
 	tag   string
 	err   error
 }
 
+// Error returns the error explaining the bad default value.
 func (e *ErrInvalidDefault) Error() string {
 	return "invalid default value for field '" + e.field + "' (tag '" + e.tag + "'): " + e.err.Error()
 }
