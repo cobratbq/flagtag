@@ -265,7 +265,9 @@ type flagTag struct {
 	Name         string
 	DefaultValue string
 	Description  string
-	Options      flagoptTag
+	Options      struct {
+		skipFlagValue bool
+	}
 }
 
 type ErrInvalidDefault struct {
@@ -276,9 +278,4 @@ type ErrInvalidDefault struct {
 
 func (e *ErrInvalidDefault) Error() string {
 	return "invalid default value for field '" + e.field + "' (tag '" + e.tag + "'): " + e.err.Error()
-}
-
-// flagoptTag contains the parsed additional flag options
-type flagoptTag struct {
-	skipFlagValue bool
 }
