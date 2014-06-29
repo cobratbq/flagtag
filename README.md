@@ -86,6 +86,8 @@ Features
 Under consideration
 -------------------
 
+* Support for custom argument slices. (Instead of default CommandLine options.)
+* Support for custom flag set(s).
 * More advanced syntax for '*flagopt*' tag for other options.
   * Define syntax for use w/ and w/o value, such that the flagopt tag can be extended at a later time.
   * Separate multiple options with commas.
