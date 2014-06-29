@@ -69,7 +69,7 @@ func Configure(config interface{}) error {
 	if err != nil {
 		return err
 	}
-	return configure(val)
+	return configure(val, flag.CommandLine)
 }
 
 // configure (recursively) configures flags as they are discovered in the provided type and value.
@@ -79,7 +79,7 @@ func Configure(config interface{}) error {
 // - nil interface provided.
 // - interface to nil value provided.
 // - Tagged variable uses unsupported data type.
-func configure(structValue reflect.Value) error {
+func configure(structValue reflect.Value, flagset *flag.FlagSet) error {
 	var structType = structValue.Type()
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
@@ -90,7 +90,7 @@ func configure(structValue reflect.Value) error {
 			// if field is not tagged then we do not need to flag the type itself
 			if fieldType.Kind() == reflect.Struct {
 				// kind is a struct => recurse into inner struct
-				if err := configure(fieldValue); err != nil {
+				if err := configure(fieldValue, flagset); err != nil {
 					return err
 				}
 			}
@@ -125,11 +125,11 @@ func configure(structValue reflect.Value) error {
 			if !fieldValue.CanSet() {
 				return errors.New("field '" + field.Name + "' (tag '" + tag.Name + "') is unexported or unaddressable: cannot use this field")
 			}
-			if !tag.Options.SkipFlagValue && registerFlagByValueInterface(fieldValue, &tag) {
+			if !tag.Options.SkipFlagValue && registerFlagByValueInterface(fieldValue, &tag, flagset) {
 				// no error during registration => Var-flag registered => continue with next field
 				continue
 			}
-			if err := registerFlagByPrimitive(field.Name, fieldValue, &tag); err != nil {
+			if err := registerFlagByPrimitive(field.Name, fieldValue, &tag, flagset); err != nil {
 				return err
 			}
 		}
@@ -139,7 +139,7 @@ func configure(structValue reflect.Value) error {
 
 // registerFlagByValueInterface checks if the provided type can be treated as flag.Value.
 // If so, a flag.Value flag is set and true is returned. If no flag is set, false is returned.
-func registerFlagByValueInterface(fieldValue reflect.Value, tag *flagTag) bool {
+func registerFlagByValueInterface(fieldValue reflect.Value, tag *flagTag, flagset *flag.FlagSet) bool {
 	var value flag.Value
 	switch fieldValue.Type().Kind() {
 	case reflect.Interface:
@@ -155,7 +155,7 @@ func registerFlagByValueInterface(fieldValue reflect.Value, tag *flagTag) bool {
 			return false
 		}
 	}
-	flag.Var(value, tag.Name, tag.Description)
+	flagset.Var(value, tag.Name, tag.Description)
 	if tag.DefaultValue != "" {
 		// a default value is provided, first call value.Set() with the provided default value
 		value.Set(tag.DefaultValue)
@@ -168,7 +168,7 @@ func registerFlagByValueInterface(fieldValue reflect.Value, tag *flagTag) bool {
 //
 // If it is not possible to register a flag because of an unknown data type, an error will be returned.
 // If the specified default value is invalid, an error of type ErrInvalidDefault will be returned.
-func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *flagTag) error {
+func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *flagTag, flagset *flag.FlagSet) error {
 	var fieldType = fieldValue.Type()
 	// Check time.Duration first, since it will also match one of the basic kinds.
 	if durationVar, ok := fieldValue.Addr().Interface().(*time.Duration); ok {
@@ -177,7 +177,7 @@ func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *fl
 		if err != nil {
 			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
-		flag.DurationVar(durationVar, tag.Name, defaultVal, tag.Description)
+		flagset.DurationVar(durationVar, tag.Name, defaultVal, tag.Description)
 		return nil
 	}
 	// Check basic kinds.
@@ -185,43 +185,43 @@ func registerFlagByPrimitive(fieldName string, fieldValue reflect.Value, tag *fl
 	var fieldPtr = unsafe.Pointer(fieldValue.UnsafeAddr())
 	switch fieldType.Kind() {
 	case reflect.String:
-		flag.StringVar((*string)(fieldPtr), tag.Name, tag.DefaultValue, tag.Description)
+		flagset.StringVar((*string)(fieldPtr), tag.Name, tag.DefaultValue, tag.Description)
 	case reflect.Bool:
 		defaultVal, err := strconv.ParseBool(tag.DefaultValue)
 		if err != nil {
 			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
-		flag.BoolVar((*bool)(fieldPtr), tag.Name, defaultVal, tag.Description)
+		flagset.BoolVar((*bool)(fieldPtr), tag.Name, defaultVal, tag.Description)
 	case reflect.Float64:
 		defaultVal, err := strconv.ParseFloat(tag.DefaultValue, 64)
 		if err != nil {
 			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
-		flag.Float64Var((*float64)(fieldPtr), tag.Name, defaultVal, tag.Description)
+		flagset.Float64Var((*float64)(fieldPtr), tag.Name, defaultVal, tag.Description)
 	case reflect.Int:
 		defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, fieldType.Bits())
 		if err != nil {
 			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
-		flag.IntVar((*int)(fieldPtr), tag.Name, int(defaultVal), tag.Description)
+		flagset.IntVar((*int)(fieldPtr), tag.Name, int(defaultVal), tag.Description)
 	case reflect.Int64:
 		defaultVal, err := strconv.ParseInt(tag.DefaultValue, 0, 64)
 		if err != nil {
 			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
-		flag.Int64Var((*int64)(fieldPtr), tag.Name, defaultVal, tag.Description)
+		flagset.Int64Var((*int64)(fieldPtr), tag.Name, defaultVal, tag.Description)
 	case reflect.Uint:
 		defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, fieldType.Bits())
 		if err != nil {
 			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
-		flag.UintVar((*uint)(fieldPtr), tag.Name, uint(defaultVal), tag.Description)
+		flagset.UintVar((*uint)(fieldPtr), tag.Name, uint(defaultVal), tag.Description)
 	case reflect.Uint64:
 		defaultVal, err := strconv.ParseUint(tag.DefaultValue, 0, 64)
 		if err != nil {
 			return &ErrInvalidDefault{fieldName, tag.Name, err}
 		}
-		flag.Uint64Var((*uint64)(fieldPtr), tag.Name, defaultVal, tag.Description)
+		flagset.Uint64Var((*uint64)(fieldPtr), tag.Name, defaultVal, tag.Description)
 	default:
 		return errors.New("unsupported data type (kind '" + strconv.FormatUint(uint64(fieldType.Kind()), 10) + "') for field '" + fieldName + "' (tag '" + tag.Name + "')")
 	}
