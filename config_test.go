@@ -2,6 +2,7 @@ package flagtag
 
 import (
 	"flag"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -734,4 +735,107 @@ func (o *flagoptInt) String() string {
 func (o *flagoptInt) Set(value string) error {
 	*o = 42
 	return nil
+}
+
+func TestConfigureFlagsetAndParseArgs(t *testing.T) {
+	fs := flag.NewFlagSet("foo", flag.ContinueOnError)
+	args := os.Args[:1]
+	var s = struct {
+		D int
+	}{}
+	var testset = []struct {
+		data          interface{}
+		flagset       *flag.FlagSet
+		args          []string
+		errorExpected bool
+	}{
+		{nil, nil, nil, true},
+		{&s, nil, nil, true},
+		{nil, fs, nil, true},
+		{nil, nil, args, true},
+		{&s, fs, nil, false},
+		{nil, fs, args, true},
+		{&s, nil, args, true},
+		{&s, fs, args, false},
+		{&s, fs, []string{}, false},
+	}
+	// run tests for cases specified above
+	for nr, test := range testset {
+		if err := ConfigureFlagsetAndParseArgs(test.data, test.flagset, test.args); (err != nil) != test.errorExpected {
+			t.Error("Test entry", nr, "failed with error", err)
+		}
+	}
+}
+
+func TestConfigureAndParseArgs(t *testing.T) {
+	args := os.Args[:1]
+	var s = struct {
+		D int
+	}{}
+	var testset = []struct {
+		data          interface{}
+		args          []string
+		errorExpected bool
+	}{
+		{nil, nil, true},
+		{&s, nil, false},
+		{nil, args, true},
+		{&s, args, false},
+	}
+	// run tests for cases specified above
+	for nr, test := range testset {
+		if err := ConfigureAndParseArgs(test.data, test.args); (err != nil) != test.errorExpected {
+			t.Error("Test entry", nr, "failed with error", err)
+		}
+	}
+}
+
+func TestMustConfigureFlagset(t *testing.T) {
+	os.Args = os.Args[:1]
+	fs := flag.NewFlagSet("foo", flag.ContinueOnError)
+	var s = struct {
+		D int
+	}{}
+	var testset = []struct {
+		data        interface{}
+		flagset     *flag.FlagSet
+		shouldError bool
+	}{
+		{nil, nil, true},
+		{&s, nil, true},
+		{nil, flag.CommandLine, true},
+		{nil, fs, true},
+		{&s, flag.CommandLine, false},
+		{&s, fs, false},
+	}
+	for nr, test := range testset {
+		if err := ConfigureFlagset(test.data, test.flagset); (err != nil) != test.shouldError {
+			t.Error("Test entry", nr, "failed ConfigureFlagset with error", err)
+		}
+		if err := ConfigureFlagsetAndParse(test.data, test.flagset); (err != nil) != test.shouldError {
+			t.Error("Test entry", nr, "failed ConfigureFlagsetAndParse with error", err)
+		}
+		if recovered := controlledMustConfigureFlagset(test.data, test.flagset); recovered != test.shouldError {
+			t.Error("Test entry", nr, "failed MustConfigureFlagset with recovery", recovered)
+		}
+		if recovered := controlledMustConfigureFlagsetAndParse(test.data, test.flagset); recovered != test.shouldError {
+			t.Error("Test entry", nr, "failed MustConfigureFlagsetAndParse with recovery", recovered)
+		}
+	}
+}
+
+func controlledMustConfigureFlagset(data interface{}, fs *flag.FlagSet) (result bool) {
+	defer func() {
+		result = recover() != nil
+	}()
+	MustConfigureFlagset(data, fs)
+	return
+}
+
+func controlledMustConfigureFlagsetAndParse(data interface{}, fs *flag.FlagSet) (result bool) {
+	defer func() {
+		result = recover() != nil
+	}()
+	MustConfigureFlagsetAndParse(data, fs)
+	return
 }

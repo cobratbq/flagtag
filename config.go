@@ -6,6 +6,7 @@ package flagtag
 import (
 	"errors"
 	"flag"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -21,10 +22,44 @@ func MustConfigureAndParse(config interface{}) {
 	}
 }
 
+// MustConfigureFlagsetAndParse is like MustConfigureAndParse with the addition
+// that it is possible to provide a custom flagset.
+func MustConfigureFlagsetAndParse(config interface{}, flagset *flag.FlagSet) {
+	if err := ConfigureFlagsetAndParse(config, flagset); err != nil {
+		panic(err)
+	}
+}
+
+// MustConfigureAndParseArgs is like MustConfigureAndParse with the addition
+// that it is possible to provide an arguments slice to be parsed, instead of
+// the default command line arguments slice.
+func MustConfigureAndParseArgs(config interface{}, args []string) {
+	if err := ConfigureAndParseArgs(config, args); err != nil {
+		panic(err)
+	}
+}
+
+// MustConfigureFlagsetAndParseArgs is like MustConfigureAndParse with the
+// addition that it is possible to provide both a custom flagset and the
+// argument slice to be parsed.
+func MustConfigureFlagsetAndParseArgs(config interface{}, flagset *flag.FlagSet, args []string) {
+	if err := ConfigureFlagsetAndParseArgs(config, flagset, args); err != nil {
+		panic(err)
+	}
+}
+
 // MustConfigure is like Configure, the only difference is that it will panic
 // in case of an error.
 func MustConfigure(config interface{}) {
 	if err := Configure(config); err != nil {
+		panic(err)
+	}
+}
+
+// MustConfigureFlagset is like Configure, the only difference being that it is
+// possible to provide a custom flagset.
+func MustConfigureFlagset(config interface{}, flagset *flag.FlagSet) {
+	if err := ConfigureFlagset(config, flagset); err != nil {
 		panic(err)
 	}
 }
@@ -42,6 +77,28 @@ func ConfigureAndParse(config interface{}) error {
 	}
 	flag.Parse()
 	return nil
+}
+
+// ConfigureFlagsetAndParse is like ConfigureAndParse with the addition that it
+// is possible to provide the flagset for the configuration.
+func ConfigureFlagsetAndParse(config interface{}, flagset *flag.FlagSet) error {
+	return ConfigureFlagsetAndParseArgs(config, flagset, os.Args[1:])
+}
+
+// ConfigureAndParseArgs is like ConfigureAndParse with the addition that it is
+// possible to provide the arguments slice that should be parsed.
+func ConfigureAndParseArgs(config interface{}, args []string) error {
+	return ConfigureFlagsetAndParseArgs(config, flag.CommandLine, args)
+}
+
+// ConfigureFlagsetAndParseArgs is like ConfigureAndParse with the addition
+// that it is possible to provide both the flagset for configuration and the
+// arguments slice that should be parsed.
+func ConfigureFlagsetAndParseArgs(config interface{}, flagset *flag.FlagSet, args []string) error {
+	if err := ConfigureFlagset(config, flagset); err != nil {
+		return err
+	}
+	return flagset.Parse(args)
 }
 
 // Configure will configure the flag parameters according to the tags of the
@@ -65,11 +122,17 @@ func ConfigureAndParse(config interface{}) error {
 // If an error occurs, this error will be returned and the configuration of
 // other struct fields will be aborted.
 func Configure(config interface{}) error {
+	return ConfigureFlagset(config, flag.CommandLine)
+}
+
+// ConfigureFlagset is like Configure but with the added ability to provide a
+// flag set.
+func ConfigureFlagset(config interface{}, flagset *flag.FlagSet) error {
 	val, err := getStructValue(config)
 	if err != nil {
 		return err
 	}
-	return configure(val, flag.CommandLine)
+	return configure(val, flagset)
 }
 
 // configure (recursively) configures flags as they are discovered in the provided type and value.
@@ -80,6 +143,9 @@ func Configure(config interface{}) error {
 // - interface to nil value provided.
 // - Tagged variable uses unsupported data type.
 func configure(structValue reflect.Value, flagset *flag.FlagSet) error {
+	if flagset == nil {
+		return errors.New("flagset cannot be nil")
+	}
 	var structType = structValue.Type()
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
