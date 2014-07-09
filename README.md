@@ -1,5 +1,6 @@
-flagtag
+flagtag [![GoDoc](https://godoc.org/github.com/cobratbq/flagtag?status.svg)](https://godoc.org/github.com/cobratbq/flagtag)
 =======
+
 *... a Go command line flag support package*
 
 *flagtag* is a little package that focuses on providing very quick &amp; easy support for connecting command line arguments to variables. The package provides a **flag** tag and a mechanism for automatically discovering tagged variables for which to set up flags.
