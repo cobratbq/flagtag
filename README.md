@@ -82,12 +82,12 @@ Features
 * Default value for flag.Value implementors. If a default value is provided (i.e. non-zero length) then Set() will be called first with the default value. Then again if the flag was specified as a command line argument.
 * Flag options using the tag '*flagopt*'.
   * '*skipFlagValue*' can be provided to indicate that we should skip testing for the implementation of flag.Value. This can be used if the struct field accidentally implements flag.Value but you do not want to use it.
+* Support for custom argument slices. (Instead of default CommandLine options.)
+* Support for custom flag set(s).
 
 Under consideration
 -------------------
 
-* Support for custom argument slices. (Instead of default CommandLine options.)
-* Support for custom flag set(s).
 * More advanced syntax for '*flagopt*' tag for other options.
   * Define syntax for use w/ and w/o value, such that the flagopt tag can be extended at a later time.
   * Separate multiple options with commas.
