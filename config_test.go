@@ -737,36 +737,6 @@ func (o *flagoptInt) Set(value string) error {
 	return nil
 }
 
-func TestConfigureFlagsetAndParseArgs(t *testing.T) {
-	fs := flag.NewFlagSet("foo", flag.ContinueOnError)
-	args := os.Args[:1]
-	var s = struct {
-		D int
-	}{}
-	var testset = []struct {
-		data          interface{}
-		flagset       *flag.FlagSet
-		args          []string
-		errorExpected bool
-	}{
-		{nil, nil, nil, true},
-		{&s, nil, nil, true},
-		{nil, fs, nil, true},
-		{nil, nil, args, true},
-		{&s, fs, nil, false},
-		{nil, fs, args, true},
-		{&s, nil, args, true},
-		{&s, fs, args, false},
-		{&s, fs, []string{}, false},
-	}
-	// run tests for cases specified above
-	for nr, test := range testset {
-		if err := ConfigureFlagsetAndParseArgs(test.data, test.flagset, test.args); (err != nil) != test.errorExpected {
-			t.Error("Test entry", nr, "failed with error", err)
-		}
-	}
-}
-
 func TestConfigureAndParseArgs(t *testing.T) {
 	args := os.Args[:1]
 	var s = struct {
