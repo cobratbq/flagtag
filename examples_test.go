@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func ExampleMustConfigureAndParse_basic() {
+func ExampleMustConfigureAndParse_greeter() {
 	// Prepare configuration
 	var config struct {
 		Greeting string `flag:"greet,Hello,The greeting."`
