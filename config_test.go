@@ -824,6 +824,66 @@ func TestMustConfigureFlagset(t *testing.T) {
 	}
 }
 
+func TestMustConfigureAndParseArgs(t *testing.T) {
+	var s = struct {
+		D int
+	}{}
+	var testset = []struct {
+		data        interface{}
+		args        []string
+		shouldError bool
+	}{
+		{nil, nil, true},
+		{&s, nil, false},
+		{nil, []string{}, true},
+		{&s, []string{}, false},
+		{nil, []string{"hello"}, true},
+		{&s, []string{"hello"}, false},
+	}
+	for nr, test := range testset {
+		if err := ConfigureAndParseArgs(test.data, test.args); (err != nil) != test.shouldError {
+			t.Error("Test entry", nr, "failed ConfigureAndParseArgs with error", err)
+		}
+		if recovered := controlledMustConfigureAndParseArgs(test.data, test.args); recovered != test.shouldError {
+			t.Error("Test entry", nr, "failed MustConfigureFlagset with recovery", recovered)
+		}
+	}
+}
+
+func TestMustConfigureFlagsetAndParseArgs(t *testing.T) {
+	var s = struct {
+		D int
+	}{}
+	var fs = flag.NewFlagSet("foo", flag.ContinueOnError)
+	var testset = []struct {
+		data        interface{}
+		flagset     *flag.FlagSet
+		args        []string
+		shouldError bool
+	}{
+		{nil, nil, nil, true},
+		{nil, nil, []string{}, true},
+		{nil, nil, []string{"hello"}, true},
+		{nil, fs, nil, true},
+		{nil, fs, []string{}, true},
+		{nil, fs, []string{"hello"}, true},
+		{&s, nil, nil, true},
+		{&s, nil, []string{}, true},
+		{&s, nil, []string{"hello"}, true},
+		{&s, fs, nil, false},
+		{&s, fs, []string{}, false},
+		{&s, fs, []string{"hello"}, false},
+	}
+	for nr, test := range testset {
+		if err := ConfigureFlagsetAndParseArgs(test.data, test.flagset, test.args); (err != nil) != test.shouldError {
+			t.Error("Test entry", nr, "failed ConfigureFlagsetAndParseArgs with error", err)
+		}
+		if recovered := controlledMustConfigureFlagsetAndParseArgs(test.data, test.flagset, test.args); recovered != test.shouldError {
+			t.Error("Test entry", nr, "failed MustConfigureFlagsetAndParseArgs with recovery", recovered)
+		}
+	}
+}
+
 func controlledMustConfigureFlagset(data interface{}, fs *flag.FlagSet) (result bool) {
 	defer func() {
 		result = recover() != nil
@@ -837,5 +897,21 @@ func controlledMustConfigureFlagsetAndParse(data interface{}, fs *flag.FlagSet) 
 		result = recover() != nil
 	}()
 	MustConfigureFlagsetAndParse(data, fs)
+	return
+}
+
+func controlledMustConfigureAndParseArgs(data interface{}, args []string) (result bool) {
+	defer func() {
+		result = recover() != nil
+	}()
+	MustConfigureAndParseArgs(data, args)
+	return
+}
+
+func controlledMustConfigureFlagsetAndParseArgs(data interface{}, flagset *flag.FlagSet, args []string) (result bool) {
+	defer func() {
+		result = recover() != nil
+	}()
+	MustConfigureFlagsetAndParseArgs(data, flagset, args)
 	return
 }
