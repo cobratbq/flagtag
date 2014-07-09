@@ -1,4 +1,4 @@
-flagtag [![GoDoc](https://godoc.org/github.com/cobratbq/flagtag?status.svg)](https://godoc.org/github.com/cobratbq/flagtag)
+flagtag [![GoDoc](https://godoc.org/github.com/cobratbq/flagtag?status.svg)](https://godoc.org/github.com/cobratbq/flagtag) [![Build Status](https://travis-ci.org/cobratbq/flagtag.svg)](https://travis-ci.org/cobratbq/flagtag)
 =======
 
 *... a Go command line flag support package*
