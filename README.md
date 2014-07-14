@@ -80,7 +80,7 @@ Features
 * Recursively configuring nested structs (unless they themselves are tagged).
 * Either returning an error or panicking, whatever suits your needs.
 * Do a one-pass **configure &amp; parse** and be done with it, or configure multiple structs and/or define your own additional flags yourself. You can define your own flags interchangeably with using the flagtag package.
-* Default value for flag.Value implementors. If a default value is provided (i.e. non-zero length) then Set() will be called first with the default value. Then again if the flag was specified as a command line argument.
+* Default value for *flag.Value* implementors. If a default value is provided (i.e. non-zero length) then Set() will be called first with the default value. Then again if the flag was specified as a command line argument.
 * Flag options using the tag '*flagopt*'.
   * '*skipFlagValue*' can be provided to indicate that we should skip testing for the implementation of flag.Value. This can be used if the struct field accidentally implements flag.Value but you do not want to use it.
 * Support for custom argument slices. (Instead of default CommandLine options.)
@@ -99,4 +99,4 @@ Compatibility notes
 
 *flagtag* is fully compatible with Go's flag package. It simply uses the facilities offered by the [flag package](http://golang.org/pkg/flag/). It is also possible to use *flagtag* interchangeably with the flag package itself. As with the flag package, you have to be sure that flags have not been parsed yet, while still configuring the flags.
 
-Support for default values is not consistent with the flag package. The flag package does not provide a parameter for a default value. *flagtag* simply calls Set(..) first with the default value *if* a default value is provided, then again if the flag is specified as a program argument.
+Support for default values for *flag.Value* interface types is not available in the flag package. The flag package does not provide a parameter for a default value. So, as an addition, *flagtag* simply calls Set(..) first with the default value *if* a default value is provided. Then, while parsing values if it turns out that this particular flag is specified, we again call Set(..) for the flag according to the specified program argument.
